@@ -1,0 +1,85 @@
+@startuml class view
+
+class CLIOptionParser {}
+
+class FlatBuffer {
+  
+}
+
+class TimerWatcher {
+  +TimerWatcher(ev_loop*,EventHandler*)
+}
+
+class FdWatcher {
+  +FdWatcher(\nev_loop*,\nfd,\nEventHandler*)
+}
+
+interface EventHandler {
+  + on_timeout()
+  + on_read_ready()
+}
+class Config {}
+
+class MasqueClient {
+}
+abstract class TransportLayer {
++TransportLayer(MasqueClient*)
+}
+
+class InnerLayer {
++InnerLayer(MasqueClient*)
+}
+
+class PvdClient {
++PvdClient(MasqueClient*)
+}
+
+class OuterLayer {
++OuterLayer(MasqueClient*)
+}
+
+
+class UDPLayer {
++UDPLayer(MasqueClient*)
+}
+
+class QuicConnection {
+ +QuicConnection(TransportLayer*)
+}
+
+class Http3Connection {
+  +Http3Connection(TransportLayer*)
+}
+
+class Worker {
++get_ev_loop()
+}
+
+class IPAllocator {
++ allocate_ipv4()
++ allocate_ipv6()
+}
+
+CLIOptionParser *- Config
+
+UDPLayer *-- "2" FlatBuffer
+UDPLayer *-- FdWatcher
+
+QuicConnection *-- "*" TimerWatcher
+MasqueClient  *--  TransportLayer
+TransportLayer  *--  Http3Connection
+TransportLayer  *--   QuicConnection
+MasqueClient  o-- "?" OuterLayer
+MasqueClient  *--  UDPLayer
+
+MasqueClient "*" o-   Worker
+Config --o MasqueClient
+EventHandler <|-- QuicConnection
+EventHandler <|-- UDPLayer
+
+QuicConnection -- Http3Connection
+TransportLayer <|- InnerLayer
+TransportLayer <|-- PvdClient
+OuterLayer -|> TransportLayer
+
+@enduml

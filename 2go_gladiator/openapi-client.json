@@ -1,0 +1,1034 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Client Wrapper API",
+    "description": "Flask-based REST API wrapper for managing and monitoring HTTP/3 client test executions with automatic retry capabilities for MASQUE proxy testing.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Tasks",
+      "description": "HTTP/3 client task management"
+    },
+    {
+      "name": "Certificates",
+      "description": "TLS certificate retrieval operations"
+    }
+  ],
+  "paths": {
+    "/tasks": {
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Create a new HTTP/3 client task",
+        "description": "Creates a new task to execute the HTTP/3 client with specified arguments. Supports automatic retry if duration is specified.",
+        "operationId": "createTask",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["arguments"],
+                "properties": {
+                  "arguments": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Command-line arguments for the HTTP/3 client. Supported parameters: --connect-udp, --pvd-server, --pvd-only, --quic-forwarding, --clients-num, --ipv4-pool, --ipv6-pool, --timeout, --connect-speed, --mtu, --duration, --request-dup-factor, --target",
+                    "example": ["--duration=300", "--target=192.0.0.5:443", "--pvd-server=10.0.0.2:443", "--clients-num=100"]
+                  },
+                  "auto_retry": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable automatic retry if task fails before duration is met"
+                  }
+                }
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Basic HTTP/3 test",
+                  "value": {
+                    "arguments": ["--target=192.0.0.5:443", "--requests=1000"],
+                    "auto_retry": false
+                  }
+                },
+                "masque_direct": {
+                  "summary": "MASQUE proxy with direct connection",
+                  "value": {
+                    "arguments": [
+                      "--connect-udp=10.0.0.1:443",
+                      "--target=192.0.0.5:443",
+                      "--duration=300",
+                      "--clients-num=50"
+                    ],
+                    "auto_retry": true
+                  }
+                },
+                "pvd_discovery": {
+                  "summary": "PVD server discovery",
+                  "value": {
+                    "arguments": [
+                      "--pvd-server=10.0.0.2:443",
+                      "--target=192.0.0.5:443",
+                      "--duration=600",
+                      "--clients-num=100",
+                      "--connect-speed=20"
+                    ],
+                    "auto_retry": true
+                  }
+                },
+                "quic_forwarding": {
+                  "summary": "QUIC-Aware forwarding",
+                  "value": {
+                    "arguments": [
+                      "--connect-udp=10.0.0.1:443",
+                      "--quic-forwarding",
+                      "--target=192.0.0.5:443",
+                      "--duration=1h",
+                      "--clients-num=200"
+                    ],
+                    "auto_retry": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid arguments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "List all tasks",
+        "description": "Returns a list of all tasks, optionally filtered by date range",
+        "operationId": "listTasks",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Start date as Unix timestamp",
+            "schema": {
+              "type": "integer",
+              "example": 1706950800
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "End date as Unix timestamp",
+            "schema": {
+              "type": "integer",
+              "example": 1706954400
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get task details",
+        "description": "Returns detailed information about a specific task including all attempts",
+        "operationId": "getTask",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "description": "Task UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Tasks"],
+        "summary": "Terminate a task",
+        "description": "Terminates a running task and all its associated processes",
+        "operationId": "deleteTask",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "description": "Task UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task terminated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "task 550e8400-e29b-41d4-a716-446655440000 successfully deleted"
+                    },
+                    "terminated_processes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": ["550e8400-e29b-41d4-a716-446655440000_attempt_2"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/summary": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get tasks summary",
+        "description": "Returns aggregated statistics for all tasks",
+        "operationId": "getTasksSummary",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Start date as Unix timestamp",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "End date as Unix timestamp",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tasks summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Summary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/certificates": {
+      "post": {
+        "tags": ["Certificates"],
+        "summary": "Retrieve TLS certificates",
+        "description": "Starts a certificate retrieval task for the specified server",
+        "operationId": "retrieveCertificates",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["arguments"],
+                "properties": {
+                  "arguments": {
+                    "type": "object",
+                    "description": "Certificate retriever arguments. Supported parameters: proxy (required), protocol, ipv4-pool, mask, sni, tls-version, allow-insecure, rampup, merge, debug",
+                    "properties": {
+                      "proxy": {
+                        "type": "string",
+                        "description": "MASQUE proxy host:port (required)",
+                        "example": "10.0.0.1:443"
+                      },
+                      "protocol": {
+                        "type": "string",
+                        "description": "Protocol to use: udp or tcp (default: udp)",
+                        "enum": ["udp", "tcp"],
+                        "example": "udp"
+                      },
+                      "ipv4-pool": {
+                        "type": "string",
+                        "description": "CIDR notation for IPv4 pool",
+                        "example": "23.0.0.1/24"
+                      },
+                      "mask": {
+                        "type": "string",
+                        "description": "Subnet mask (alternative to CIDR)",
+                        "example": "255.255.255.0"
+                      },
+                      "sni": {
+                        "type": "string",
+                        "description": "Override TLS SNI/ServerName for proxy certificate verification",
+                        "example": "proxy.example.com"
+                      },
+                      "tls-version": {
+                        "type": "string",
+                        "description": "TLS version to use: auto, 1.0, 1.1, 1.2, or 1.3 (default: auto)",
+                        "enum": ["auto", "1.0", "1.1", "1.2", "1.3"],
+                        "example": "1.3"
+                      },
+                      "allow-insecure": {
+                        "type": "string",
+                        "description": "Proceed even if certificate verification fails (default: true)",
+                        "example": "true"
+                      },
+                      "rampup": {
+                        "type": "string",
+                        "description": "Number of tasks per second (0 for unlimited)",
+                        "example": "10"
+                      },
+                      "merge": {
+                        "type": "string",
+                        "description": "Merge duplicate certificates and group source IPs (default: true)",
+                        "example": "true"
+                      },
+                      "debug": {
+                        "type": "string",
+                        "description": "Enable debug output",
+                        "example": "false"
+                      }
+                    },
+                    "required": ["proxy"]
+                  }
+                }
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Basic certificate retrieval",
+                  "value": {
+                    "arguments": {
+                      "proxy": "10.0.0.1:443",
+                      "ipv4-pool": "23.0.0.1/24"
+                    }
+                  }
+                },
+                "advanced": {
+                  "summary": "Advanced with TLS settings",
+                  "value": {
+                    "arguments": {
+                      "proxy": "10.0.0.1:443",
+                      "protocol": "udp",
+                      "ipv4-pool": "23.0.0.1/24",
+                      "sni": "proxy.example.com",
+                      "tls-version": "1.3",
+                      "rampup": "100",
+                      "merge": "true"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Certificate retrieval task created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "task_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid arguments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Certificates"],
+        "summary": "List all certificate tasks",
+        "description": "Returns all certificate retrieval tasks",
+        "operationId": "listCertificateTasks",
+        "responses": {
+          "200": {
+            "description": "List of certificate tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/CertificateTask"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/certificates/last": {
+      "get": {
+        "tags": ["Certificates"],
+        "summary": "Get last certificate task",
+        "description": "Returns the most recent certificate retrieval task",
+        "operationId": "getLastCertificateTask",
+        "responses": {
+          "200": {
+            "description": "Last certificate task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateTask"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/certificates/{task_id}": {
+      "get": {
+        "tags": ["Certificates"],
+        "summary": "Get certificate task details",
+        "description": "Returns details of a specific certificate retrieval task",
+        "operationId": "getCertificateTask",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate task UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Certificate task details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateTask"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Certificate task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "summary": "Get OpenAPI specification",
+        "description": "Returns the OpenAPI specification for this API",
+        "responses": {
+          "200": {
+            "description": "OpenAPI specification"
+          }
+        }
+      }
+    },
+    "/docs": {
+      "get": {
+        "summary": "API documentation",
+        "description": "Interactive API documentation (Swagger UI)",
+        "responses": {
+          "200": {
+            "description": "HTML documentation page"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TaskCreated": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "duration_detected": {
+            "type": "boolean",
+            "example": true
+          },
+          "auto_retry": {
+            "type": "boolean",
+            "example": true
+          },
+          "has_duration": {
+            "type": "boolean",
+            "example": true
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "nullable": true,
+            "example": 300
+          }
+        }
+      },
+      "TaskDetails": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "initializing",
+              "running",
+              "completed",
+              "completed_with_retries",
+              "partial_completion",
+              "failed",
+              "failed_all_attempts",
+              "failed_before_duration",
+              "task failed",
+              "timeout",
+              "terminated"
+            ]
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total_attempts": {
+            "type": "integer"
+          },
+          "successful_attempts": {
+            "type": "integer"
+          },
+          "failed_attempts": {
+            "type": "integer"
+          },
+          "total_execution_time": {
+            "type": "number",
+            "format": "float"
+          },
+          "requested_duration": {
+            "type": "integer",
+            "nullable": true
+          },
+          "achieved_duration_ratio": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "has_duration": {
+            "type": "boolean"
+          },
+          "auto_retry_enabled": {
+            "type": "boolean"
+          },
+          "last_attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "attempts_summary": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttemptSummary"
+            }
+          },
+          "stats": {
+            "$ref": "#/components/schemas/Stats"
+          }
+        }
+      },
+      "TaskSummary": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total_attempts": {
+            "type": "integer"
+          },
+          "has_duration": {
+            "type": "boolean"
+          },
+          "total_execution_time": {
+            "type": "number",
+            "format": "float"
+          },
+          "output": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "Attempt": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "is_retry": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/Stats"
+          },
+          "returncode": {
+            "type": "integer"
+          },
+          "execution_time": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "AttemptSummary": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "execution_time": {
+            "type": "number",
+            "format": "float"
+          },
+          "returncode": {
+            "type": "integer"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Stats": {
+        "type": "object",
+        "properties": {
+          "payload_bytes": {
+            "type": "integer"
+          },
+          "total_time": {
+            "type": "number"
+          },
+          "http3_errors": {
+            "type": "integer"
+          },
+          "masque_errors": {
+            "type": "integer"
+          },
+          "tunnel_rx_pkts": {
+            "type": "integer"
+          },
+          "tunnel_tx_pkts": {
+            "type": "integer"
+          },
+          "forward_rx_pkts": {
+            "type": "integer"
+          },
+          "forward_tx_pkts": {
+            "type": "integer"
+          },
+          "udp_throughput_rx": {
+            "type": "number",
+            "format": "float"
+          },
+          "udp_throughput_tx": {
+            "type": "number",
+            "format": "float"
+          },
+          "udp_bytes_rx": {
+            "type": "integer"
+          },
+          "udp_bytes_tx": {
+            "type": "integer"
+          },
+          "inner_connections_created": {
+            "type": "integer"
+          },
+          "inner_connections_closed": {
+            "type": "integer"
+          },
+          "quic_streams_created": {
+            "type": "integer"
+          },
+          "quic_streams_closed": {
+            "type": "integer"
+          },
+          "outer_connections_created": {
+            "type": "integer"
+          },
+          "outer_connections_closed": {
+            "type": "integer"
+          }
+        }
+      },
+      "Summary": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "running": {
+            "type": "integer"
+          },
+          "initializing": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "task failed": {
+            "type": "integer"
+          },
+          "completed_with_retries": {
+            "type": "integer"
+          },
+          "partial_completion": {
+            "type": "integer"
+          },
+          "failed_all_attempts": {
+            "type": "integer"
+          },
+          "failed_before_duration": {
+            "type": "integer"
+          },
+          "terminated": {
+            "type": "integer"
+          },
+          "timeout": {
+            "type": "integer"
+          },
+          "total_attempts": {
+            "type": "integer"
+          },
+          "successful_attempts": {
+            "type": "integer"
+          },
+          "failed_attempts": {
+            "type": "integer"
+          },
+          "total_execution_time": {
+            "type": "number",
+            "format": "float"
+          },
+          "average_attempts_per_task": {
+            "type": "number",
+            "format": "float"
+          },
+          "total_http3_errors": {
+            "type": "integer"
+          },
+          "total_masque_errors": {
+            "type": "integer"
+          },
+          "total_tunnel_tx_pkts": {
+            "type": "integer"
+          },
+          "total_tunnel_rx_pkts": {
+            "type": "integer"
+          },
+          "total_forward_tx_pkts": {
+            "type": "integer"
+          },
+          "total_forward_rx_pkts": {
+            "type": "integer"
+          },
+          "total_inner_connections_closed": {
+            "type": "integer"
+          },
+          "total_inner_connections_created": {
+            "type": "integer"
+          },
+          "total_outer_connections_closed": {
+            "type": "integer"
+          },
+          "total_outer_connections_created": {
+            "type": "integer"
+          },
+          "total_quic_streams_closed": {
+            "type": "integer"
+          },
+          "total_quic_streams_created": {
+            "type": "integer"
+          },
+          "total_udp_bytes_tx": {
+            "type": "integer"
+          },
+          "total_udp_bytes_rx": {
+            "type": "integer"
+          },
+          "total_payload_bytes": {
+            "type": "integer"
+          },
+          "total_total_time": {
+            "type": "number"
+          }
+        }
+      },
+      "CertificateTask": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["running", "completed", "failed", "task failed"]
+          },
+          "arguments": {
+            "type": "object"
+          },
+          "command": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "output": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "certificates_data": {
+            "$ref": "#/components/schemas/CertificatesData"
+          }
+        }
+      },
+      "CertificatesData": {
+        "type": "object",
+        "properties": {
+          "different_certs": {
+            "type": "integer"
+          },
+          "server_sni": {
+            "type": "string"
+          },
+          "chain_length": {
+            "type": "string"
+          },
+          "is_complete": {
+            "type": "boolean"
+          },
+          "missing_root": {
+            "type": "boolean"
+          },
+          "certificates": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Certificate"
+              }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "Certificate": {
+        "type": "object",
+        "properties": {
+          "sni": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

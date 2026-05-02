@@ -1,0 +1,11 @@
+@startuml use case  
+usecase (QUIC proxying method) as quic_proxying
+usecase (UDP proxying method) as udp_proxying
+actor :masque client: as client
+actor :masque proxy: as proxy
+
+udp_proxying <-- client
+udp_proxying <-- proxy
+client --> quic_proxying
+proxy --> quic_proxying
+@enduml

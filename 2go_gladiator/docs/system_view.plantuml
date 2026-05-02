@@ -1,0 +1,94 @@
+@startuml
+'allowmixing
+
+node "Masque Client(+)" as client {
+
+component "Inner Layer(+)" as inn_layer{
+component Inner [
+    Http3
+    ----
+    QUIC
+]
+
+}
+
+component "Outer Layer(?)" as Outer_layer{
+component Outer [
+    Http3 (masque)
+    ----
+    QUIC [datagram,...]
+]
+}
+
+component "PVD Client(?)" as pvd_client {
+    component Pvd [
+    Http3
+    ----
+    QUIC
+]
+    
+}
+
+component "UDP Layer(+)" as udp_layer {
+    component udp [
+        UDP
+    ]
+}
+
+component "client" as masque_client {
+control " " as controller
+}
+
+Inner <--> Outer : Tunnel Mode
+Outer <--> udp 
+Pvd <--> udp
+Inner <--> udp : Quic-Aware Forwarding Mode
+
+controller -(0 inn_layer: ""
+controller -(0 Outer_layer: ""
+controller --(0 pvd_client: ""
+controller -(0 udp_layer: ""
+
+}
+
+node "MASQUE Proxy" as proxy {
+  component p1  [
+    Http3 (masque)
+    -----
+    QUIC [datagram, stream,...]
+    -----
+    UDP
+    ====
+    IP (proxy IP)
+   ]
+}
+
+node "PVD Server" as pvd_server {
+    component p3 [
+    Http3
+    -----
+    QUIC [stream,...]
+    -----
+    UDP
+    ====
+    IP
+    ]    
+}
+
+node "Target Server" as target {
+    component p2 [
+    Http3
+    -----
+    QUIC [stream,...]
+    -----
+    UDP
+    ====
+    IP
+    ]    
+}
+
+udp <.> proxy : "           1010010001        "
+udp <..> pvd_server : " 1101001001"
+
+p1 <.> p2 : "    0010100010      "
+@enduml

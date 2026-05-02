@@ -1,0 +1,7 @@
+Usage of ./func:
+  -i int
+    	índice que se desea calcular, F (i) (default 2)
+  -n0 int
+    	F(0)
+  -n1 int
+    	F(1) (default 1)

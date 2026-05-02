@@ -1,0 +1,10 @@
+a int: 5
+cadena string: sin(Θ)=cos(π/2-θ)
+ar *int: 0xc000012138
+cadenar *string: 0xc000014070
+ad int: 5
+cadenad string: sin(Θ)=cos(π/2-θ)
+0xc000012138
+0xc000088028
+true
+true

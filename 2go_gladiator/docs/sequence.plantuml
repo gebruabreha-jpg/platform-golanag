@@ -1,0 +1,106 @@
+@startuml Sequence
+
+control "main()" as main
+control "Workers" as workers
+participant "CliOptionParser" as cli_opt 
+
+
+collections "MasqueClients" as clients
+participant "UdpLayer" as udp
+participant "InnerLayer" as inn
+participant "OuterLayer" as tunnel
+participant "PvdClient" as pvd
+
+participant "PVD Server" as pvd_server
+participant "Masque Proxy" as proxy
+participant "Target Server" as os
+
+
+main -> cli_opt: cli_opt.parse_cli()
+main -> clients: client.start()
+clients -> workers: worker.add_job(StartJob)
+workers -> clients: client.on_start()
+clients -> udp: udp.start()
+
+group Pvd session 
+clients -> pvd ** : create PVD Client
+pvd -> pvd_server: HTTP GET
+pvd_server -> pvd: HTTP 200 OK
+end
+
+
+group Tunnel Setup
+clients -> tunnel ** : create outer layer
+clients -> tunnel ++: tunnel.start()
+tunnel -> tunnel : build request **connect-udp**
+tunnel -> tunnel: submit http request
+tunnel -> udp: write QUIC Frames to udp's tx_buffer
+return
+
+clients -> udp ++: udp.send_data()
+udp -> udp: socket send()
+return
+
+udp -> proxy: Http3 (request **connect-udp**)
+
+proxy -> udp: Http3 (response **200 OK**)
+
+udp -> clients : client.on_udp_data_ready_to_read()
+
+clients -> tunnel ++: tunnel.on_udp_data_ready_to_read() 
+
+tunnel -> tunnel: Quic decode payload\nHttp3 decode payload
+return
+
+tunnel -> clients ++: client.on_tunnel_setup()
+
+end
+
+clients -> inn ** : create inner layer
+clients -> inn : inner.start()
+return
+
+group Send Data
+clients -> inn ++ : inner.send_data()
+inn -> inn : submit http requests
+
+
+inn -> tunnel: write QUIC Frames(Crypto,Stream,others) \nto tunnel's buffer
+return 
+
+clients -> tunnel ++: tunnel.send_data()
+
+tunnel -> tunnel : read buffer and encode as\nQUIC **DATAGRAM** frames
+tunnel -> tunnel : write frames to udp tx_buffer
+return
+
+clients -> udp ++: udp.send_data()
+udp -> udp: send()
+return
+
+udp -> proxy: QUIC **DATAGRAM**/UDP
+
+proxy -> os : Http3/QUIC/UDP
+
+end
+
+group Receive Data
+os -> proxy: Http3/QUIC/UDP
+
+proxy -> udp: QUIC **DATAGRAM**/UDP
+
+
+udp -> clients : client.on_udp_data_ready_to_read()
+
+clients -> tunnel ++: tunnel.on_udp_data_ready_to_read() 
+
+tunnel -> tunnel: get **DATAGRAM** payload
+return
+
+tunnel -> inn ++: inn.on_tunnel_data_ready_to_read()
+inn ->inn: Quic decode payload\nHttp3 decode payload
+return
+
+end
+
+@enduml

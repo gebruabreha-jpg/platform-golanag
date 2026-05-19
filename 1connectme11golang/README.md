@@ -27,6 +27,14 @@ Supabase - PostgreSQL-compatible with auth, realtime, storage
 PlanetScale - MySQL-compatible (not suitable for this project)
 Neon.tech - Serverless PostgreSQL
 
+Best Free Database Options:-
+Supabase - Free tier: 500MB database, 1GB storage, includes auth/realtime
+Neon.tech - Free tier: 10GB storage, 1 compute unit, 30 million rows
+Railway.app - Free tier: 500MB PostgreSQL (simple but limited)
+Render.com - Free tier: 100MB PostgreSQL (very limited)
+AWS RDS - Free tier: 20GB PostgreSQL for 12 months (then paid)
+
+
 all-in-one: Render.com (Docker Compose deployment with managed PostgreSQL)
 
 

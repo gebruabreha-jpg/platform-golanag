@@ -1,0 +1,201 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: connectme_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: connectme_user
+      POSTGRES_PASSWORD: connectme_pass_2024
+      POSTGRES_DB: connectme
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - connectme_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U connectme_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: connectme_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - connectme_network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NATS (for real-time messaging)
+  nats:
+    image: nats:2.10-alpine
+    container_name: connectme_nats
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"  # Monitoring
+    command: ["-js", "-m", "8222"]
+    volumes:
+      - nats_data:/data
+    networks:
+      - connectme_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/varz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO (S3-compatible object storage for images/files)
+  minio:
+    image: minio/minio:latest
+    container_name: connectme_minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin2024
+    volumes:
+      - minio_data:/data
+    networks:
+      - connectme_network
+    command: minio server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Go Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: connectme_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ENVIRONMENT: production
+      SERVER_ADDR: :8080
+      DATABASE_URL: postgresql://connectme_user:connectme_pass_2024@postgres:5432/connectme?sslmode=disable
+      REDIS_ADDR: redis:6379
+      NATS_URL: nats://nats:4222
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-change-in-prod}
+      JWT_EXPIRY: 24h
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      AWS_REGION: us-east-1
+      S3_BUCKET: connectme-uploads
+      S3_ENDPOINT: http://minio:9000
+    networks:
+      - connectme_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Python AI Service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: connectme_ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://connectme_user:connectme_pass_2024@postgres:5432/connectme
+      REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
+      MODEL_PATH: /app/models
+      EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      DEVICE: cpu
+      BACKEND_URL: http://backend:8080
+    volumes:
+      - ./ai-service/models:/app/models  # Persist ML models
+    networks:
+      - connectme_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: connectme_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8080
+      NEXT_PUBLIC_AI_URL: http://ai-service:8000
+      MAPBOX_TOKEN: ${MAPBOX_TOKEN}
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY}
+    networks:
+      - connectme_network
+    depends_on:
+      - backend
+      - ai-service
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: connectme_pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@connectme.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    networks:
+      - connectme_network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  redis_data:
+  nats_data:
+  minio_data:
+
+networks:
+  connectme_network:
+    driver: bridge

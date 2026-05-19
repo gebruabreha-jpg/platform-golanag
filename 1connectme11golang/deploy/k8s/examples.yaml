@@ -1,0 +1,252 @@
+# Kubernetes Deployment Examples
+# These are example manifests for deploying ConnectMe on Kubernetes
+# Adjust based on your cluster setup
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: connectme
+
+---
+# ConfigMap for shared configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connectme-config
+  namespace: connectme
+data:
+  DATABASE_URL: "postgresql://..."
+  REDIS_ADDR: "redis-master:6379"
+  NATS_URL: "nats://nats:4222"
+  JWT_EXPIRY: "24h"
+
+---
+# PostgreSQL Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: connectme-secrets
+  namespace: connectme
+type: Opaque
+stringData:
+  JWT_SECRET: "your-jwt-secret"
+  STRIPE_SECRET_KEY: "sk_live_..."
+  AWS_ACCESS_KEY_ID: "AKIA..."
+  AWS_SECRET_ACCESS_KEY: "..."
+
+---
+# PostgreSQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: connectme
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        env:
+        - name: POSTGRES_USER
+          value: connectme_user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: connectme-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          value: connectme
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+
+---
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: connectme
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: ghcr.io/your-org/connectme/backend:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: connectme-config
+        - secretRef:
+            name: connectme-secrets
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: connectme-secrets
+              key: DATABASE_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# AI Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: connectme
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+    spec:
+      containers:
+      - name: ai-service
+        image: ghcr.io/your-org/connectme/ai-service:latest
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: models
+          mountPath: /app/models
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        envFrom:
+        - configMapRef:
+            name: connectme-config
+
+---
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: connectme
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/your-org/connectme/frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://backend.connectme.svc.cluster.local:8080"
+        - name: NEXT_PUBLIC_AI_URL
+          value: "http://ai-service.connectme.svc.cluster.local:8000"
+
+---
+# Services (ClusterIP for internal)
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: connectme
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+# Ingress (expose to internet)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: connectme-ingress
+  namespace: connectme
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - api.connectme.io
+    - app.connectme.io
+    secretName: connectme-tls
+  rules:
+  - host: api.connectme.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8080
+  - host: app.connectme.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000

@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  phone         String?   @unique
+  firstName     String
+  lastName      String
+  role          Role      @default(DIASPORA_USER)
+  isActive      Boolean   @default(true)
+  isVerified    Boolean   @default(false)
+  passwordHash  String?
+  verifiedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  transactions Transaction[]
+  accounts     Account[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountType   String    // stripe_customer, wise_balance, etc.
+  provider      String   // stripe, wise, etc.
+  accountId     String   @unique // external provider ID
+  credentials   Json?    // encrypted credentials
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("accounts")
+}
+
+model Session {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token         String    @unique
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  deviceInfo    Json?
+
+  @@map("sessions")
+}
+
+model Merchant {
+  id              String      @id @default(cuid())
+  name            String
+  businessType    BusinessType // SCHOOL, HOSPITAL, SUPERMARKET
+  registrationNumber String?
+  taxId           String?
+  email           String?
+  phone           String?
+  address         Json?
+  bankName        String      // CBE, Awash, etc.
+  bankAccountName String
+  bankAccountNumber String
+  branchName      String?
+  isActive        Boolean     @default(true)
+  isVerified      Boolean     @default(false)
+  verifiedAt      DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  transactions Transaction[]
+  categories   MerchantCategory[]
+
+  @@map("merchants")
+}
+
+model MerchantCategory {
+  id        String   @id @default(cuid())
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  category   String   // TUITION, GROCERY, HEALTHCARE
+  isActive   Boolean  @default(true)
+
+  @@unique([merchantId, category])
+  @@map("merchant_categories")
+}
+
+model Transaction {
+  id                String         @id @default(cuid())
+  referenceId       String         @unique // External reference used by diaspora user
+  senderId          String
+  sender            User           @relation(fields: [senderId], references: [id])
+  merchantId        String
+  merchant          Merchant       @relation(fields: [merchantId], references: [id])
+  amount            Decimal        // Original amount in sender currency (USD)
+  fxRate            Decimal        // Exchange rate applied
+  localAmount       Decimal        // Amount in ETB after conversion
+  feeAmount         Decimal        // Fee charged in USD
+  totalCharged      Decimal        // totalCharged = amount + feeAmount
+  status            TransactionStatus @default(PENDING)
+  stripePaymentId   String?        @unique // Stripe payment intent ID
+  stripeChargeId    String?        @unique // Stripe charge ID
+  wiseTransferId    String?        @unique // Wise transfer ID
+  failureReason     String?
+  completedAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@map("transactions")
+}
+
+model Payout {
+  id                String         @id @default(cuid())
+  transactionId     String         @unique
+  transaction       Transaction    @relation(fields: [transactionId], references: [id])
+  wiseTransferId    String         @unique
+  wiseProfileId     String
+  sourceCurrency    String         @default(USD)
+  targetCurrency    String         @default(ETB)
+  amount            Decimal        // Amount in source currency
+  localAmount       Decimal        // Amount in target currency
+  feeAmount         Decimal        // Wise fee
+  fxRate            Decimal        // Wise exchange rate
+  status            PayoutStatus   @default(PENDING)
+  completedAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@map("payouts")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String
+  resourceId String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+  @@map("audit_logs")
+
+enum Role {
+  DIASPORA_USER
+  MERCHANT_ADMIN
+  PLATFORM_ADMIN
+}
+
+enum BusinessType {
+  SCHOOL
+  HOSPITAL
+  SUPERMARKET
+  PHARMACY
+  UTILITY_COMPANY
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}

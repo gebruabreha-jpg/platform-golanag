@@ -8,7 +8,28 @@ Authentication: JWT
 API Documentation: Swagger/OpenAPI
 Deployment: Docker + Docker Compose
 Testing: Go testing framework, Jest for frontend
-Note: Despite the directory name "4connectme11java" suggesting Java, the actual implementation uses Go for the backend. The project connects Ethiopians globally through 4 core services: Flight Booking, Peer-to-Peer Shipping, Rental Marketplace, and Service Marketplace (for professionals like lawyers, doctors, etc.).
+Note: Despite the directory name "4connectme11java" suggesting Java, the actual implementation uses Go for the backend. The project connects Ethiopians globally through 4 core services: Flight Booking, Peer-to-Peer Shipping, Rental Marketplace, and Service Marketplace (for professionals like lawyers, doctors, etc.)
+
+Deployments:-
+Frontend:
+Vercel (best for Next.js - zero config, automatic deployments)
+Netlify
+Cloudflare Pages
+
+
+Backend:
+Fly.io (recommended) - Multi-region, good for Go apps, handles multiple services
+Render.com - Docker Compose support, managed PostgreSQL
+Railway.app - Simple setup
+
+Serverless Database:
+Supabase - PostgreSQL-compatible with auth, realtime, storage
+PlanetScale - MySQL-compatible (not suitable for this project)
+Neon.tech - Serverless PostgreSQL
+
+all-in-one: Render.com (Docker Compose deployment with managed PostgreSQL)
+
+
 ## Core Services:
 1. **Flight Booking Service** - Book international flights mainly to ethiopia.
 2. **Peer-to-Peer Shipping & Travel Delivery** - Send/receive items via travelers

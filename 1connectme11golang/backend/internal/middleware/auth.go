@@ -1,13 +1,14 @@
 package middleware
 
 import (
-	"connectme/internal/config"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 func AuthMiddleware(secret string) gin.HandlerFunc {
@@ -60,11 +61,73 @@ func CORS() gin.HandlerFunc {
 	})
 }
 
-func RateLimit(redisClient *redis.Client) gin.HandlerFunc {
-	// Implement rate limiting with Redis
-	return gin.HandlerFunc(func(c *gin.Context) {
+// RequireRole enforces RBAC — at least one of the listed roles must
+// match the role declared in the JWT claims.
+func RequireRole(allowedRoles ...string) gin.HandlerFunc {
+	roleSet := make(map[string]struct{}, len(allowedRoles))
+	for _, r := range allowedRoles {
+		roleSet[r] = struct{}{}
+	}
+
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if !exists {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			c.Abort()
+			return
+		}
+		if _, ok := roleSet[role.(string)]; !ok {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+			c.Abort()
+			return
+		}
 		c.Next()
-	})
+	}
+}
+
+// IsAdmin is a convenience check for ADMIN-level operations.
+func IsAdmin(c *gin.Context) bool {
+	role, ok := c.Get("role")
+	return ok && role.(string) == "ADMIN"
+}
+
+// RateLimit protects routes with a Redis-backed sliding-window counter.
+// Default: 100 requests per minute per IP+endpoint key.
+func RateLimit(redisClient *redis.Client) gin.HandlerFunc {
+	const (
+		limit  = 100 // max requests
+		window = 60  // seconds
+	)
+
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		key := "ratelimit:" + c.ClientIP() + ":" + c.Request.URL.Path
+
+		count, err := redisClient.Incr(ctx, key).Result()
+		if err != nil {
+			// Fail open — allow the request if Redis is down
+			c.Next()
+			return
+		}
+
+		if count == 1 {
+			redisClient.Expire(ctx, key, window)
+		}
+
+		if count > int64(limit) {
+			c.Header("Retry-After", strconv.Itoa(window))
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Too many requests. Please try again later.",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Header("X-RateLimit-Limit", strconv.Itoa(limit))
+		c.Header("X-RateLimit-Remaining", strconv.Itoa(limit-int(count)))
+
+		c.Next()
+	}
 }
 
 // JWTClaims represents the JWT token claims

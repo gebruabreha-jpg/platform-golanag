@@ -9,10 +9,6 @@ type CommunityRepository struct {
 	db *gorm.DB
 }
 
-func NewCommunityRepository(db *gorm.DB) *CommunityRepository {
-	return &CommunityRepository{db: db}
-}
-
 func (r *CommunityRepository) Create(community *domain.Community) error {
 	return r.db.Create(community).Error
 }

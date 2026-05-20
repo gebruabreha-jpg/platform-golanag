@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"connectme/internal/repository"
 	"connectme/internal/service"
 	"net/http"
 	"strconv"

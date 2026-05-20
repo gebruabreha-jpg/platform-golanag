@@ -4,6 +4,9 @@ import (
 	"connectme/internal/domain"
 	"connectme/internal/repository"
 	"errors"
+	"time"
+
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -60,17 +63,17 @@ func (s *UserService) Register(req RegisterRequest) (*domain.User, error) {
 	}
 
 	user := &domain.User{
-		Email:       req.Email,
-		FirstName:   req.FirstName,
-		LastName:    req.LastName,
-		Phone:       req.Phone,
-		Country:     req.Country,
-		Role:        req.Role,
-		IsVerified:  false,
-		TrustScore:  0.5, // Initial trust score
+		ID:           uuid.NewString(),
+		Email:        req.Email,
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
+		PasswordHash: string(hashedPassword),
+		Phone:        req.Phone,
+		Country:      req.Country,
+		Role:         req.Role,
+		IsVerified:   false,
+		TrustScore:   0.5,
 	}
-	// Store hashed password separately in real implementation
-	_ = string(hashedPassword)
 
 	if err := s.userRepo.Create(user); err != nil {
 		return nil, err
@@ -85,10 +88,9 @@ func (s *UserService) Login(req LoginRequest) (*domain.User, error) {
 		return nil, errors.New("invalid credentials")
 	}
 
-	// Verify password (implement proper password hash check)
-	// if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-	//     return nil, errors.New("invalid credentials")
-	// }
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		return nil, errors.New("invalid credentials")
+	}
 
 	return user, nil
 }

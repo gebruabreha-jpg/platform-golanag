@@ -21,6 +21,7 @@ type User struct {
 	VerificationLevel int `json:"verification_level"` // 0=none, 1=basic, 2=full
 	TrustScore   float64   `json:"trust_score" gorm:"default:0"`
 	TotalTransactions int `json:"total_transactions" gorm:"default:0"`
+	PasswordHash string    `json:"-" gorm:"not null"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	DeletedAt    *time.Time `json:"deleted_at,omitempty"`

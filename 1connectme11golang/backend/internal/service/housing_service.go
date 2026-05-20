@@ -77,12 +77,30 @@ type ListListingsFilter struct {
 }
 
 func (s *HousingService) ListListings(filter ListListingsFilter) ([]*domain.HousingListing, int, error) {
-	listings, total, err := s.housingRepo.List(filter, filter.Limit, filter.Offset)
+	filterMap := map[string]interface{}{}
+	if filter.City != "" {
+		filterMap["city"] = filter.City
+	}
+	if filter.Country != "" {
+		filterMap["country"] = filter.Country
+	}
+	if filter.PropertyType != "" {
+		filterMap["property_type"] = filter.PropertyType
+	}
+	if filter.RoomType != "" {
+		filterMap["room_type"] = filter.RoomType
+	}
+
+	listings, err := s.housingRepo.List(filterMap, filter.Limit, filter.Offset)
 	if err != nil {
 		return nil, 0, err
 	}
-	// Count not implemented - would need to add to repository
-	return listings, 0, nil
+	// total count separate call
+	totalCount, err := s.housingRepo.Count(filterMap)
+	if err != nil {
+		return nil, 0, err
+	}
+	return listings, int(totalCount), nil
 }
 
 func (s *HousingService) GetListing(id string) (*domain.HousingListing, error) {

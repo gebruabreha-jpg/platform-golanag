@@ -3,8 +3,8 @@ package service
 import (
 	"connectme/internal/domain"
 	"connectme/internal/repository"
+	"encoding/json"
 	"errors"
-	"time"
 )
 
 type MarketplaceService struct {
@@ -32,6 +32,7 @@ type CreateItemRequest struct {
 }
 
 func (s *MarketplaceService) CreateItem(req CreateItemRequest) (*domain.MarketplaceItem, error) {
+	imagesJSON, _ := json.Marshal(req.ImageURLs)
 	item := &domain.MarketplaceItem{
 		SellerID:          req.SellerID,
 		Title:            req.Title,
@@ -45,7 +46,7 @@ func (s *MarketplaceService) CreateItem(req CreateItemRequest) (*domain.Marketpl
 		Country:         req.Country,
 		ShippingAvailable: req.ShippingAvailable,
 		ShippingCost:    req.ShippingCost,
-		ImageURLs:       req.ImageURLs,
+		ImageURLs:       string(imagesJSON),
 		IsActive:        true,
 	}
 
@@ -70,17 +71,31 @@ type ListItemsFilter struct {
 }
 
 func (s *MarketplaceService) ListItems(filter ListItemsFilter) ([]*domain.MarketplaceItem, int, error) {
-	items, err := s.itemRepo.List(filter, filter.Limit, filter.Offset)
+	filterMap := map[string]interface{}{}
+	if filter.Category != "" {
+		filterMap["category"] = filter.Category
+	}
+	if filter.Country != "" {
+		filterMap["country"] = filter.Country
+	}
+	if filter.City != "" {
+		filterMap["city"] = filter.City
+	}
+	if filter.Condition != "" {
+		filterMap["condition"] = filter.Condition
+	}
+
+	items, err := s.itemRepo.List(filterMap, filter.Limit, filter.Offset)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	total, err := s.itemRepo.Count(filter) // Implement count method
+	total, err := s.itemRepo.Count(filterMap)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return items, total, nil
+	return items, int(total), nil
 }
 
 func (s *MarketplaceService) GetItem(id string) (*domain.MarketplaceItem, error) {

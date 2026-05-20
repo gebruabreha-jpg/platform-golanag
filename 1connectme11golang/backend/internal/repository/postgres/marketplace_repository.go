@@ -9,10 +9,6 @@ type MarketplaceRepository struct {
 	db *gorm.DB
 }
 
-func NewMarketplaceRepository(db *gorm.DB) *MarketplaceRepository {
-	return &MarketplaceRepository{db: db}
-}
-
 func (r *MarketplaceRepository) CreateItem(item *domain.MarketplaceItem) error {
 	return r.db.Create(item).Error
 }

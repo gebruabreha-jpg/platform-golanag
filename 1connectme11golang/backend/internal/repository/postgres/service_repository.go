@@ -9,10 +9,6 @@ type ServiceRepository struct {
 	db *gorm.DB
 }
 
-func NewServiceRepository(db *gorm.DB) *ServiceRepository {
-	return &ServiceRepository{db: db}
-}
-
 func (r *ServiceRepository) CreateScholarship(scholarship *domain.Scholarship) error {
 	return r.db.Create(scholarship).Error
 }
@@ -55,14 +51,20 @@ func (r *ServiceRepository) GetLatestRate(from, to string) (*domain.CurrencyRate
 	return &rate, nil
 }
 
-func (r *ServiceRepository) ListLawyers(filter map[string]interface{}, limit, offset int) ([]*domain.Lawyer, error) {
-	query := r.db
+func (r *ServiceRepository) ListLawyers(filter map[string]interface{}, limit, offset int) ([]*domain.Lawyer, int64, error) {
+	query := r.db.Model(&domain.Lawyer{})
 	for key, value := range filter {
 		query = query.Where(key+" = ?", value)
 	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
 	var lawyers []*domain.Lawyer
 	err := query.Limit(limit).Offset(offset).Find(&lawyers).Error
-	return lawyers, err
+	return lawyers, total, err
 }
 
 func (r *ServiceRepository) GetLawyerByID(id string) (*domain.Lawyer, error) {

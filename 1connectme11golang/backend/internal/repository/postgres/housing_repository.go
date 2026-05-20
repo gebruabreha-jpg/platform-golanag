@@ -9,10 +9,6 @@ type HousingRepository struct {
 	db *gorm.DB
 }
 
-func NewHousingRepository(db *gorm.DB) *HousingRepository {
-	return &HousingRepository{db: db}
-}
-
 func (r *HousingRepository) CreateListing(listing *domain.HousingListing) error {
 	return r.db.Create(listing).Error
 }
@@ -42,4 +38,14 @@ func (r *HousingRepository) UpdateListing(listing *domain.HousingListing) error 
 
 func (r *HousingRepository) IncrementApplicationCount(id string) error {
 	return r.db.Model(&domain.HousingListing{}).Where("id = ?", id).UpdateColumn("application_count", gorm.Expr("application_count + 1")).Error
+}
+
+func (r *HousingRepository) Count(filter map[string]interface{}) (int64, error) {
+	var count int64
+	query := r.db.Model(&domain.HousingListing{})
+	for key, value := range filter {
+		query = query.Where(key+" = ?", value)
+	}
+	err := query.Count(&count).Error
+	return count, err
 }

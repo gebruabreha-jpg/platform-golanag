@@ -23,11 +23,22 @@ type ListLawyersFilter struct {
 }
 
 func (s *ServiceService) ListLawyers(filter ListLawyersFilter) ([]*domain.Lawyer, int, error) {
-	lawyers, total, err := s.serviceRepo.ListLawyers(filter, filter.Limit, filter.Offset)
+	filterMap := map[string]interface{}{}
+	if filter.Specialization != "" {
+		filterMap["specialization"] = filter.Specialization
+	}
+	if filter.Country != "" {
+		filterMap["country"] = filter.Country
+	}
+	if filter.Search != "" {
+		filterMap["search"] = filter.Search
+	}
+
+	lawyers, total, err := s.serviceRepo.ListLawyers(filterMap, filter.Limit, filter.Offset)
 	if err != nil {
 		return nil, 0, err
 	}
-	return lawyers, total, nil
+	return lawyers, int(total), nil
 }
 
 func (s *ServiceService) GetLawyer(id string) (*domain.Lawyer, error) {

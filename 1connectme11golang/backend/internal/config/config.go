@@ -30,8 +30,8 @@ type Config struct {
 	AWSSecretKey    string
 	S3Bucket        string
 
-	AI ServiceURL   string
-	AI APIKey       string
+	AIServiceURL   string
+	AIAPIKey       string
 }
 
 func Load() *Config {

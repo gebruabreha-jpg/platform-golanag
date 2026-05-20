@@ -3,6 +3,7 @@ package service
 import (
 	"connectme/internal/domain"
 	"connectme/internal/repository"
+	"encoding/json"
 	"errors"
 )
 
@@ -71,12 +72,26 @@ func (s *CommunityService) ListCommunities(filter ListCommunitiesFilter) ([]*dom
 		return nil, 0, err
 	}
 
-	total, err := s.communityRepo.Count(filter) // Implement Count in repo
+	filterMap := map[string]interface{}{}
+	if filter.Category != "" {
+		filterMap["category"] = filter.Category
+	}
+	if filter.Location != "" {
+		filterMap["location"] = filter.Location
+	}
+	if filter.Country != "" {
+		filterMap["country"] = filter.Country
+	}
+	if filter.IsPrivate {
+		filterMap["is_private"] = filter.IsPrivate
+	}
+
+	total, err := s.communityRepo.Count(filterMap)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return communities, total, nil
+	return communities, int(total), nil
 }
 
 func (s *CommunityService) GetCommunity(id string) (*domain.Community, error) {
@@ -114,13 +129,14 @@ type CreatePostRequest struct {
 
 func (s *CommunityService) CreatePost(req CreatePostRequest) (*domain.Post, error) {
 	// Check user permissions to post in community
+	mediaJSON, _ := json.Marshal(req.MediaURLs)
 	post := &domain.Post{
 		CommunityID: req.CommunityID,
 		UserID:      req.UserID,
 		Type:        req.Type,
 		Title:       req.Title,
 		Content:     req.Content,
-		MediaURLs:   req.MediaURLs,
+		MediaURLs:   string(mediaJSON),
 	}
 
 	if err := s.postRepo.Create(post); err != nil {

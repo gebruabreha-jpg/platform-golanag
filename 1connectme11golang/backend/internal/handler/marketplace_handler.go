@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"connectme/internal/repository"
 	"connectme/internal/service"
 	"net/http"
 	"strconv"
@@ -110,7 +109,18 @@ func (h *MarketplaceHandler) UpdateItem(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Item updated"})
 }
 
-// ExpressInterest handles POST /api/v1/marketplace/items/:id/interest
+// InitiateSecurePayment handles POST /api/v1/marketplace/transactions/:id/secure-payment
+func (h *MarketplaceHandler) InitiateSecurePayment(c *gin.Context) {
+	txID := c.Param("id")
+	userID := c.GetString("userID")
+	// TODO: load transaction, verify ownership, create Stripe intent / escrow hold
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Secure payment initiated",
+		"tx_id":     txID,
+		"user_id":   userID,
+	})
+}
+
 func (h *MarketplaceHandler) ExpressInterest(c *gin.Context) {
 	itemID := c.Param("id")
 	userID := c.GetString("userID")

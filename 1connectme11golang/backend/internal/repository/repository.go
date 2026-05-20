@@ -2,8 +2,9 @@ package repository
 
 import (
 	"connectme/internal/domain"
-	"gorm.io/gorm"
 )
+
+// --- Repository interfaces ---
 
 type UserRepository interface {
 	Create(user *domain.User) error
@@ -20,6 +21,7 @@ type CommunityRepository interface {
 	Create(community *domain.Community) error
 	GetByID(id string) (*domain.Community, error)
 	List(category, location string, limit, offset int) ([]*domain.Community, error)
+	Count(filter map[string]interface{}) (int64, error)
 	Update(community *domain.Community) error
 	IncrementMemberCount(id string) error
 	DecrementMemberCount(id string) error
@@ -38,6 +40,7 @@ type MarketplaceRepository interface {
 	CreateItem(item *domain.MarketplaceItem) error
 	GetByID(id string) (*domain.MarketplaceItem, error)
 	List(filter map[string]interface{}, limit, offset int) ([]*domain.MarketplaceItem, error)
+	Count(filter map[string]interface{}) (int64, error)
 	UpdateItem(item *domain.MarketplaceItem) error
 	IncrementViewCount(id string) error
 	IncrementInterestCount(id string) error
@@ -48,6 +51,7 @@ type HousingRepository interface {
 	CreateListing(listing *domain.HousingListing) error
 	GetByID(id string) (*domain.HousingListing, error)
 	List(filter map[string]interface{}, limit, offset int) ([]*domain.HousingListing, error)
+	Count(filter map[string]interface{}) (int64, error)
 	UpdateListing(listing *domain.HousingListing) error
 	IncrementApplicationCount(id string) error
 }
@@ -59,7 +63,7 @@ type ServiceRepository interface {
 	GetJobs(filter map[string]interface{}, limit, offset int) ([]*domain.Job, error)
 	UpdateCurrencyRate(rate *domain.CurrencyRate) error
 	GetLatestRate(from, to string) (*domain.CurrencyRate, error)
-	ListLawyers(filter map[string]interface{}, limit, offset int) ([]*domain.Lawyer, error)
+	ListLawyers(filter map[string]interface{}, limit, offset int) ([]*domain.Lawyer, int64, error)
 	GetLawyerByID(id string) (*domain.Lawyer, error)
 	CreateLawyerBooking(booking *domain.LawyerBooking) error
 	GetCurrencyRates(from, to string) ([]*domain.CurrencyRate, error)

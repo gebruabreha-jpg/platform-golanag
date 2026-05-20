@@ -7,7 +7,7 @@ import (
 	"connectme/internal/config"
 	"connectme/internal/handler"
 	"connectme/internal/middleware"
-	"connectme/internal/repository"
+	"connectme/internal/repository/postgres"
 	"connectme/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +19,7 @@ func main() {
 	cfg := config.Load()
 
 	// Initialize database
-	db, err := repository.NewPostgresDB(cfg.DatabaseURL)
+	db, err := postgres.NewPostgresDB(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -31,13 +31,14 @@ func main() {
 		DB:       0,
 	})
 
-	// Initialize repositories
-	userRepo := repository.NewUserRepository(db)
-	communityRepo := repository.NewCommunityRepository(db)
-	postRepo := repository.NewPostRepository(db)
-	marketplaceRepo := repository.NewMarketplaceRepository(db)
-	housingRepo := repository.NewHousingRepository(db)
-	serviceRepo := repository.NewServiceRepository(db)
+	// Initialize repositories via postgres package;
+	// concrete types satisfy the repository interfaces.
+	userRepo          := postgres.NewUserRepository(db)
+	communityRepo     := postgres.NewCommunityRepository(db)
+	postRepo          := postgres.NewPostRepository(db)
+	marketplaceRepo   := postgres.NewMarketplaceRepository(db)
+	housingRepo       := postgres.NewHousingRepository(db)
+	serviceRepo       := postgres.NewServiceRepository(db)
 
 	// Initialize services
 	userService := service.NewUserService(userRepo)
@@ -47,7 +48,7 @@ func main() {
 	serviceService := service.NewServiceService(serviceRepo)
 
 	// Initialize handlers
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, cfg)
 	communityHandler := handler.NewCommunityHandler(communityService)
 	marketplaceHandler := handler.NewMarketplaceHandler(marketplaceService)
 	housingHandler := handler.NewHousingHandler(housingService)

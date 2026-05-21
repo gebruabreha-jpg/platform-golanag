@@ -1,4 +1,4 @@
-package com.onebooking.onepagecommerce.config;
+package com.onebooking.onepagecommerce;
 
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
@@ -12,6 +12,7 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Duration;

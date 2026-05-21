@@ -1,18 +1,16 @@
 package com.onebooking.onepagecommerce.config;
 
-import lombok.*;
-import org.springframework.boot.context.properties.*;
-import org.springframework.context.annotation.*;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties
 @Data
 @ConfigurationProperties(prefix = "jwt")
 public class JwtConfig {
 
     private String secret;
-    @Value("${jwt.refresh-secret:}")
-    private String refreshSecret;
+    private String refreshSecret = "";
     private long accessExpiryMinutes = 15;
     private long refreshExpiryDays = 7;
 

@@ -1,0 +1,31 @@
+{
+  "extends": "@eslint/js",
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "security", "import"],
+  "parserOptions": {
+    "ecmaVersion": "2022",
+    "sourceType": "module"
+  },
+  "env": {
+    "es2022": true,
+    "node": true,
+    "jest": true
+  },
+  "ignorePatterns": ["dist/", "coverage/", "node_modules/", "*.d.ts"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ],
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-inferrable-types": "off",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "security/detect-object-injection": "warn",
+    "security/detect-non-literal-fs-filename": "error",
+    "security/detect-non-literal-require": "error",
+    "security/detect-hardcoded-secrets": "error",
+    "security/detect-possible-timing-attacks": "error",
+    "import/order": ["error", { "groups": [["builtin", "external", "internal"]] }]
+  }
+}

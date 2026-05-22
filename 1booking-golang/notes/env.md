@@ -175,3 +175,10 @@ containers/Docker pass env directly, godotenv.Load() is really only relevant for
 Both files will live in the same config package so no import path changes needed.
 db_config.go — already production-ready, just renames Load → LoadProd for clarity.
 local.go — new file, LoadDev uses godotenv to read .env locally.
+
+// Production / Docker
+cfg := config.LoadProd()
+
+// Local development (run from backend/ directory)
+cfg := config.LoadDev()
+Both functions return the same *Config struct — the only difference is the source of the environment values.

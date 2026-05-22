@@ -168,3 +168,10 @@ You can change config WITHOUT changing code.
 👉 .env = developer helper file
 👉 OS environment = real system source
 👉 os.Getenv = Go’s way of reading config
+
+
+containers/Docker pass env directly, godotenv.Load() is really only relevant for go run during local development. It's not strictly needed for the app to connect to the DB.in production/Docker the real process environment variables are what get used anyway. It's technically optional.Docker injects them as real OS-level process environment variables — the same place os.Getenv() reads from.Why db_config.go is needed: Go has no native config convention. You need somewhere to map env vars to typed struct fields (Config) and provide a single Load() function. Without it, every file would call os.Getenv("DATABASE_URL") scattered everywhere. It centralizes the mapping — and callers use cfg.DatabaseURL instead of raw strings.
+
+Both files will live in the same config package so no import path changes needed.
+db_config.go — already production-ready, just renames Load → LoadProd for clarity.
+local.go — new file, LoadDev uses godotenv to read .env locally.

@@ -7,7 +7,7 @@ type Config struct {
 	Port        string
 }
 
-func Load() *Config {
+func LoadProd() *Config {
 	return &Config{
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		Port:        os.Getenv("PORT"),

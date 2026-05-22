@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"your-module-name/internal/config"
+	"connectme/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

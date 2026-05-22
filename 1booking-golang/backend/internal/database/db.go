@@ -1,64 +1,29 @@
-package config
+package database
 
 import (
+	"context"
 	"log"
 	"time"
 
-	"github.com/spf13/viper"
+	"your-module-name/internal/config"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Config struct {
-	Environment string
-	ServerAddr  string
+func NewPostgres(cfg *config.Config) *pgxpool.Pool {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	DatabaseURL     string
-	MigrationsURL   string
-	RedisAddr       string
-	RedisPassword   string
-	NatsURL         string
-	NatsClusterID   string
-
-	JWTSecret       string
-	JWTExpiry       time.Duration
-	RefreshSecret   string
-
-	StripeSecretKey string
-	StripeWebhookSecret string
-
-	AWSRegion       string
-	AWSAccessKey    string
-	AWSSecretKey    string
-	S3Bucket        string
-
-	AIServiceURL   string
-	AIAPIKey       string
-}
-
-func Load() *Config {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("./config")
-	viper.AutomaticEnv()
-
-	// Default values
-	viper.SetDefault("environment", "development")
-	viper.SetDefault("server.addr", ":8080")
-	viper.SetDefault("database.url", "postgres://user:pass@localhost:5432/connectme?sslmode=disable")
-	viper.SetDefault("redis.addr", "localhost:6379")
-	viper.SetDefault("nats.url", "nats://localhost:4222")
-	viper.SetDefault("jwt.expiry", "24h")
-
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			log.Printf("Config file error: %v", err)
-		}
+	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("DB connection failed: %v", err)
 	}
 
-	var cfg Config
-	if err := viper.Unmarshal(&cfg); err != nil {
-		log.Fatalf("Failed to unmarshal config: %v", err)
+	if err := db.Ping(ctx); err != nil {
+		log.Fatalf("DB ping failed: %v", err)
 	}
 
-	return &cfg
+	log.Println("Database connected")
+
+	return db
 }

@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"your-module-name/internal/config"
-	"your-module-name/internal/database"
+	"connectme/internal/config"
+	"connectme/internal/database"
 )
 
 func main() {

@@ -27,3 +27,9 @@ func NewPostgres(cfg *config.Config) *pgxpool.Pool {
 
 	return db
 }
+
+func Close(db *pgxpool.Pool) {
+	if db != nil {
+		db.Close()
+	}
+}

@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	cfg := config.LoadProd()
+	cfg := config.LoadDev()
 
 	db := database.NewPostgres(cfg)
 	defer database.Close(db)

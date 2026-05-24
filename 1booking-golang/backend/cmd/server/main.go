@@ -1,8 +1,8 @@
 package main
 
 import (
-	"connectme/internal/config"
-	"connectme/internal/database"
+	"connectme/internal/platform/config"
+	"connectme/internal/platform/database"
 )
 
 func main() {

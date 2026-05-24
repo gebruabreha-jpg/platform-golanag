@@ -1,5 +1,4 @@
-module connectme
-
+module 1booking-golang
 go 1.21
 
 require (

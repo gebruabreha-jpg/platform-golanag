@@ -1,8 +1,8 @@
 package main
 
 import (
-	"connectme/internal/platform/config"
-	"connectme/internal/platform/database"
+	"1booking-golang/internal/platform/config"
+	"1booking-golang/internal/platform/database"
 )
 
 func main() {

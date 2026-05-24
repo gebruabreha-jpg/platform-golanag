@@ -8,9 +8,22 @@ import (
 )
 
 func LoadDev() *Config {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Println(".env not found, using system env")
+	baseDir, _ := os.LookupEnv("APP_ENV")
+	if baseDir == "" {
+		baseDir, _ = os.Getwd()
+	}
+
+	candidates := []string{
+		baseDir + "/.env",
+		baseDir + "/../.env",
+		".env",
+	}
+
+	for _, path := range candidates {
+		if err := godotenv.Load(path); err == nil {
+			log.Printf("env loaded: %s", path)
+			break
+		}
 	}
 
 	return &Config{

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"connectme/backend/internal/domains/identity/model"
+	"1booking-golang/backend/internal/domains/identity/model"
 )
 
 // UserRepository defines the interface for user data access.

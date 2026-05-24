@@ -1,12 +1,12 @@
 package identity
 
 import (
-	"connectme/backend/internal/domains/identity/handler"
-	"connectme/backend/internal/domains/identity/persistence/postgres"
-	"connectme/backend/internal/domains/identity/repository"
-	"connectme/backend/internal/domains/identity/service"
-	"connectme/internal/database"
-	"connectme/internal/platform/middleware"
+	"	1booking-golang/backend/internal/domains/identity/handler"
+	"	1booking-golang/backend/internal/domains/identity/persistence/postgres"
+	"	1booking-golang/backend/internal/domains/identity/repository"
+	"	1booking-golang/backend/internal/domains/identity/service"
+	"	1booking-golang/internal/database"
+	"	1booking-golang/internal/platform/middleware"
 )
 
 // Module represents the identity module.

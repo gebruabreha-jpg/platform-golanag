@@ -1,31 +1,23 @@
-
-
-
+https://neon.com/docs/connect/connect-intro
+https://neon.com/docs/auth/migrate/from-legacy-auth
+https://neon.com/docs/introduction
 DB:------------------------------------------------------
 🧠 1. Core Idea (WHY it exists)
-
 When your Go app talks to PostgreSQL:
-
 ❌ Bad way:
-
 open a new DB connection every request
 slow
 expensive
 crashes under load
 
 👉 That is NOT scalable.
-
 So we use:
-
 👉 pgxpool
-
 It manages database connections efficiently.
-
 🗄️ 2. What pgxpool actually is (simple explanation)
 pgxpool = connection manager for PostgreSQL
 
 It:
-
 creates a pool of DB connections at startup
 reuses them for every query
 avoids opening new connections again and again
@@ -34,19 +26,14 @@ avoids opening new connections again and again
 Think of it like a restaurant:
 
 ❌ Without pool:
-
 Every customer opens a new kitchen
-
 → chaos, slow, expensive
-
 ✅ With pgxpool:
 
 You have a shared kitchen
-
 customers come in
 take a prepared slot
 return when done
-
 👉 faster + organized + scalable
 
 ⚙️ 4. How pgxpool works internally
@@ -69,12 +56,10 @@ works easily in Docker
 ✅ 2. Built-in pooling
 
 You don’t need:
-
 extra pool libraries
 manual connection management
 
 👉 it is already included
-
 ✅ 3. High performance
 used in real production systems
 very fast PostgreSQL driver in Go
@@ -85,9 +70,7 @@ Supabase
 Cloudflare
 Railway
 ✅ 4. Clean + minimal design
-
 No ORM magic.
-
 👉 You control SQL fully
 👉 You see exactly what runs
 
@@ -103,29 +86,22 @@ hides SQL
 slower but simpler
 
 mportant limitation (VERY IMPORTANT)
-
 pgxpool does NOT give you:
-
 ❌ ORM (no structs mapping magic)
 ❌ migrations
 ❌ query builder
 
 So you must add:
-
 🧩 1. Migrations tool
-
 👉 golang-migrate
 
 Used for:
-
 creating tables
 version control of schema
 🧩 2. Optional query layer
 
 👉 sqlc
-
 Used for:
-
 type-safe SQL generation
 no manual query strings in code
 

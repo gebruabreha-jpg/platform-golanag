@@ -270,3 +270,20 @@ Concurrent DB connections =
 RPS × DB time
 Example:
 3000 × 0.05 = 150 connections needed
+
+
+INFRASTRAURE:-
+Shared infrastructure:
+platform/
+│
+├── persistence/
+│   ├── postgres/db.go
+│   └── redis/client.go
+│
+├── middleware/
+├── observability/
+├── security/
+├── queue/
+├── jobs/
+├── storage/
+└── config/

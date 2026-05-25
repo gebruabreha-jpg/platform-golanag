@@ -3,27 +3,27 @@ package config
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 )
 
 func LoadDev() *Config {
-	baseDir, _ := os.LookupEnv("APP_ENV")
-	if baseDir == "" {
-		baseDir, _ = os.Getwd()
-	}
+	dir, _ := os.Getwd()
+	_ = ""
 
-	candidates := []string{
-		baseDir + "/.env",
-		baseDir + "/../.env",
-		".env",
-	}
-
-	for _, path := range candidates {
-		if err := godotenv.Load(path); err == nil {
-			log.Printf("env loaded: %s", path)
+	for {
+		envPath := filepath.Join(dir, ".env")
+		if err := godotenv.Load(envPath); err == nil {
+			log.Printf("env loaded: %s", envPath)
 			break
 		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
 	}
 
 	return &Config{

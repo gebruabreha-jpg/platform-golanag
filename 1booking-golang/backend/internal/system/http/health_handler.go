@@ -1,9 +1,10 @@
 package http
-import ("net/http"
 
+import (
+	"net/http"
 )
 
-type healthhandler struct{}
+type HealthHandler struct{}
 
 func NewHealthHandler() *HealthHandler {
 	return &HealthHandler{}

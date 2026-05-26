@@ -10,7 +10,6 @@ import (
 
 func LoadDev() *Config {
 	dir, _ := os.Getwd()
-	_ = ""
 
 	for {
 		envPath := filepath.Join(dir, ".env")

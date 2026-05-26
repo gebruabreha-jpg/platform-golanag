@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"	1booking-golang/backend/internal/domains/identity/model"
-	"	1booking-golang/backend/internal/domains/identity/repository"
+	"1booking-golang/backend/internal/domains/ota/identity/model"
+	"1booking-golang/backend/internal/domains/ota/identity/repository"
 )
 
 // AuthService handles authentication business logic.

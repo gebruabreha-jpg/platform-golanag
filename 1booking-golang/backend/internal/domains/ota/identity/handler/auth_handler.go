@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"1booking-golang/backend/internal/domains/identity/service"
+	"1booking-golang/backend/internal/domains/ota/identity/service"
 )
 
 // AuthHandler handles authentication-related HTTP requests.

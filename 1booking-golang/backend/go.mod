@@ -1,4 +1,4 @@
-module 1booking-golang
+module 1booking-golang/backend
 
 go 1.25.0
 

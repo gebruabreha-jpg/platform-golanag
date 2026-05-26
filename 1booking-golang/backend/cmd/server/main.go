@@ -1,10 +1,10 @@
 package main
 
 import (
-	systemhttp "1booking-golang/internal/system/http"
+	systemhttp "1booking-golang/backend/internal/system/http"
 
-	"1booking-golang/internal/platform/config"
-	"1booking-golang/internal/platform/database"
+	"1booking-golang/backend/internal/platform/config"
+	"1booking-golang/backend/internal/platform/database"
 
 	"log"
 	"net/http"

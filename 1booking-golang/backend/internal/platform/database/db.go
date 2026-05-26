@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"1booking-golang/internal/platform/config"
+	"1booking-golang/backend/internal/platform/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

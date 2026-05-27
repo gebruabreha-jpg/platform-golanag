@@ -1,0 +1,111 @@
+modelVersion: 2.0
+
+import:
+  base: ../../../nw-common-base/ruleset/base.yaml
+  common: ../../../common-properties.yaml
+  docker: ../../../nw-common-base/ruleset/docker.yaml
+  cpp: ../../../nw-common-base/ruleset/cpp.yaml
+
+properties:
+  - source-dir: ${base.project-dir}/tests/veto/simulators
+  - golangci-lint-config-yml: .golangci.yml
+  - plugin-dir: ${source-dir}/build/plugins
+  - cli-simulator-dir: ${source-dir}/build/cli
+  - golang-ldflags: "-w -s -X main.Version=${var.version} -extldflags '-static'"
+  - openapi-dir: ${source-dir}/internal/openapi
+  - internal_libs_cmd: $(find ${source-dir}/internal -mindepth 1 -maxdepth 1 -type d -not -name openapi -printf './internal/%f/...\n' | tr '\n' ' ')
+  - openapi-generator-go-params: >-
+      -g go
+      --skip-validate-spec
+      --global-property apiTests=false,modelTests=false
+      --additional-properties=withGoMod=false
+
+var:
+  - version
+
+env:
+  - PWD
+
+default-rules:
+  - clean
+  - lint
+  - test
+  - build
+
+rules:
+  # Make sure repo is clean
+  clean:
+    - task: clean-go-cache
+      docker-image: common.go-builder
+      cmd:
+        - go clean -cache -modcache
+    - task: rm
+      cmd:
+        - rm -rf .bob/gocache
+        - rm -rf .bob/go
+        - rm -rf ${plugin-dir}
+        - rm -rf ${cli-simulator-dir}
+
+  generate-openapi:
+    - task: clean
+      cmd:
+        - rm -rf ${openapi-dir}/v1
+        - rm -rf ${openapi-dir}/v2
+    - task: generate
+      docker-image: cpp.builder
+      docker-flags:
+        - ${docker.run-params}
+      cmd:
+        - openapi-generator generate
+          ${openapi-generator-go-params}
+          -i ${base.project-dir}/docs/api/openapi.routing-information-base.yaml
+          -o ${openapi-dir}/v1
+        - openapi-generator generate
+          ${openapi-generator-go-params}
+          -i ${base.project-dir}/docs/api/openapi.routing-information-base.v2.yaml
+          -o ${openapi-dir}/v2
+
+  lint:
+    - task: go
+      docker-image: common.go-builder
+      docker-envs:
+        - GOCACHE=${env.PWD}/.bob/gocache
+        - GOFLAGS=-modcacherw
+        - GOPATH=${env.PWD}/.bob/go
+      docker-flags:
+        - "--workdir ${source-dir}"
+      cmd:
+        - golangci-lint run --config ${golangci-lint-config-yml} ./cmd/... ${internal_libs_cmd}
+
+  test:
+    - task: test
+      docker-image: common.go-builder
+      docker-envs:
+        - GOCACHE=${env.PWD}/.bob/gocache
+        - GOFLAGS=-modcacherw
+        - GOPATH=${env.PWD}/.bob/go
+      cmd:
+        - go test -C ${source-dir} ./cmd/... ${internal_libs_cmd}
+
+  # Build source code
+  build:
+    - task: build-veto
+      docker-image: common.go-builder
+      docker-envs:
+        - GOCACHE=${env.PWD}/.bob/gocache
+        - GOFLAGS=-modcacherw
+        - GOPATH=${env.PWD}/.bob/go
+      cmd:
+        - mkdir -p ${plugin-dir}
+        - go build -C ${source-dir} -trimpath -ldflags="${golang-ldflags}" -o ${plugin-dir} ./cmd/rib-client
+        - go build -C ${source-dir} -trimpath -ldflags="${golang-ldflags}" -o ${plugin-dir} ./cmd/cmm
+        - go build -C ${source-dir} -trimpath -ldflags="${golang-ldflags}" -o ${plugin-dir} ./cmd/tw
+    - task: build-cli
+      docker-image: common.go-builder
+      docker-envs:
+        - GOCACHE=${env.PWD}/.bob/gocache
+        - GOFLAGS=-modcacherw
+        - GOPATH=${env.PWD}/.bob/go
+      cmd:
+        - mkdir -p ${cli-simulator-dir}
+        - go build -C ${source-dir} -trimpath -ldflags="${golang-ldflags}" -o ${cli-simulator-dir} ./cmd/rib-client-cli

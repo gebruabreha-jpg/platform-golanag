@@ -1,0 +1,2126 @@
+openapi: 3.0.2
+info:
+  contact:
+    email: PDLDPDEVEL@pdl.internal.ericsson.com
+  description: API for Routing Information Base.
+  license:
+    name: Ericsson
+  title: Routing Information Base API
+  version: 1.0.0
+  x-api-id: 58092dd3-1fcd-4521-87fa-3cee018cfd9c
+  x-audience: internal
+  x-doc-no: CAF 201 002
+servers:
+- description: Routing Information Base
+  url: "https://{ApiRoot}:port/paths"
+  variables:
+    ApiRoot:
+      default: eric-pc-routing-information-base
+tags:
+- description: route producer client register to routing information base.
+  name: route-producer-registration
+- description: route consumer client register to routing information base.
+  name: route-consumer-registration
+- description: route related opertions.
+  name: route-related-operation
+paths:
+  /v1/clients:
+    patch:
+      description: Update client.
+      operationId: update_client
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientUpdate'
+        required: true
+      responses:
+        "201":
+          description: client updated.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - clients
+    post:
+      callbacks:
+        notifyInformation:
+          '{$request.body#/consumer_info/url_callback}':
+            post:
+              operationId: notify_information
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/NotifyInformation'
+                required: true
+              responses:
+                "200":
+                  description: received successfully.
+                "400":
+                  content:
+                    application/problem+json:
+                      schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+                  description: Bad request
+                "500":
+                  content:
+                    application/problem+json:
+                      schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+                  description: Internal Server Error
+              summary: "notify information to clients, please refer to NotifyInformation\
+                \ below."
+              x-callback-request: true
+      description: Register client with RIB as producer or consumer or both
+      operationId: register_client
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+        required: true
+      responses:
+        "201":
+          description: client is registered.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - clients
+  /v1/clients/{client-name}:
+    delete:
+      description: "Deregister client from RIB. If the client is both a producer and\
+        \ a consumer, the two roles will be both deregistered."
+      operationId: deregister_client
+      parameters:
+      - description: "client name, please refer to the client_identifier provided\
+          \ by client when it register to RIB."
+        explode: false
+        in: path
+        name: client-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: client deleted.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - clients
+  /v1/network-instances/{network-instance-name}/routes:
+    delete:
+      description: "bulk delete the routes of the specified client under {network-instance-name}."
+      operationId: bulk_delete_routes
+      parameters:
+      - description: name of network-instance that the routes belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkDeleteRoutes'
+        required: true
+      responses:
+        "200":
+          description: handle bulk delete routes successfully.
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - bulk_delete_routes
+    post:
+      description: "Producer client adds or updates or deletes routes, support bulk\
+        \ routes on one time. Because of the scenarios where we need send mixed messages\
+        \ of routes addition and deletion in one message, we use this API to receive\
+        \ routes addition and deletion request."
+      operationId: route_operation
+      parameters:
+      - description: name of network instance that the routes belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Routes'
+        required: true
+      responses:
+        "201":
+          description: All routes handled successfully.
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutesOperationResult'
+          description: routes are handled partially successfully.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - routes
+  /v1/network-instances/{network-instance-name}/nexthops:
+    delete:
+      description: deregister nexthop.
+      operationId: deregister_nexthop
+      parameters:
+      - description: network-instance to which the nexthop belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NexthopRegister'
+        required: true
+      responses:
+        "204":
+          description: "deregister all nexthop successfully, the nexthops deleted."
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NexthopRegisterResult'
+          description: operation result.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - nexthop
+    post:
+      description: "Register nexthop in RIB. if producer client wants to be aware\
+        \ of the change for a nexthop, it can register the nexthop to RIB. Thus RIB\
+        \ can notify producer client once the nexthop changed."
+      operationId: register_nexthop
+      parameters:
+      - description: network-instance to which the nexthop belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NexthopRegister'
+        required: true
+      responses:
+        "201":
+          description: register all nexthop successfully.
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NexthopRegisterResult'
+          description: operation result.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - nexthop
+  /v1/network-instances/{network-instance-name}/clients/{client-name}/nexthop-reg-eof:
+    post:
+      description: "During startup, producer client should call this API to send nexthop\
+        \ registration EOF to RIB after it registered all its nexthop with RIB. RIB\
+        \ need know if producer client finished register nexthop with RIB."
+      operationId: receive_nexthop_registration_eof
+      parameters:
+      - description: network-instance to which the eof belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: "client name, please refer to the client_identifier provided\
+          \ by client when it register to RIB."
+        explode: false
+        in: path
+        name: client-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "201":
+          description: handle eof information successfully.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - nexthop_registration_eof
+  /v1/network-instances/{network-instance-name}/prefixes:
+    delete:
+      description: deregister a prefix.
+      operationId: deregister_prefix
+      parameters:
+      - description: network-instance to which the prefix belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrefixRegister'
+        required: true
+      responses:
+        "204":
+          description: "deregister all prefixs successfully, the prefixs deleted."
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrefixRegisterResult'
+          description: operation result.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - prefix
+    post:
+      description: "Register a prefix. if producer client want to be aware of the\
+        \ change for a prefix, it can register the prefix to RIB. Thus RIB can notify\
+        \ producer client once the prefix changed."
+      operationId: register_prefix
+      parameters:
+      - description: network-instance to which the prefix belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrefixRegister'
+        required: true
+      responses:
+        "201":
+          description: register all prefixs successfully.
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrefixRegisterResult'
+          description: operation result.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - prefix
+  /v1/network-instances/{network-instance-name}/clients/{client-name}/prefix-reg-eof:
+    post:
+      description: "During startup, producer client should call this API to send prefix\
+        \ registration EOF to RIB after it registered all its prefix with RIB. RIB\
+        \ need know if producer client finished register prefix with RIB."
+      operationId: receive_prefix_registration_eof
+      parameters:
+      - description: network-instance to which the eof belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: "client name, please refer to the client_identifier provided\
+          \ by client when it register to RIB."
+        explode: false
+        in: path
+        name: client-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "201":
+          description: handle eof information successfully.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - prefix_registration_eof
+  /v1/network-instances/{network-instance-name}/clients/{client-name}/route-eof:
+    post:
+      description: "During startup, producer client should call this API to send route\
+        \ EOF to RIB after it finishes sending all its routes of a network-instance\
+        \ to RIB."
+      operationId: receive_route_eof
+      parameters:
+      - description: network-instance to which the eof belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: "client name, please refer to the client_identifier provided\
+          \ by client when it register to RIB."
+        explode: false
+        in: path
+        name: client-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteEoFFromProducer'
+        required: true
+      responses:
+        "201":
+          description: handle eof information successfully.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - route_eof
+  /v1/network-instances/{network-instance-name}/redistribution:
+    delete:
+      description: "Delete redistribution configuration from routing protocol(a producer\
+        \ client), such as BGP."
+      operationId: delete_route_redistribution
+      parameters:
+      - description: network-instance to which the configuration belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Redistribution'
+        required: true
+      responses:
+        "204":
+          description: redistribution configuration deleted.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - redistribution
+    patch:
+      description: "update redistribution configuration from routing protocol(a producer\
+        \ client), such as from BGP."
+      operationId: update_route_redistribution
+      parameters:
+      - description: network-instance to which the configuration belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Redistribution'
+        required: true
+      responses:
+        "201":
+          description: redistribution configuration updated.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - redistribution
+    post:
+      description: "Add redistribution configuration from routing protocol(a producer\
+        \ client), now the only producer client with this capability right now is\
+        \ BGP."
+      operationId: add_route_redistribution
+      parameters:
+      - description: network-instance to which the configuration belongs to.
+        explode: false
+        in: path
+        name: network-instance-name
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Redistribution'
+        required: true
+      responses:
+        "201":
+          description: redistribution configuration added.
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Bad request
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not Found
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Internal Server Error
+      tags:
+      - redistribution
+  /v1/heartbeats:
+    post:
+      description: client send heartbeat to RIB.
+      operationId: heartbeat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Heartbeat'
+        required: true
+      responses:
+        "200":
+          description: "RIB receive heartbeat from client, and the client is in normal\
+            \ in RIB."
+        "404":
+          description: "RIB receive heartbeat from client, but the client does not\
+            \ existed in RIB."
+        "500":
+          description: Internal server error.
+      tags:
+      - heartbeat
+components:
+  responses:
+    "400":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Bad request
+    "401":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Unauthorized
+    "403":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Forbidden
+    "404":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Not Found
+    "405":
+      description: Method Not Allowed
+    "406":
+      description: 406 Not Acceptable
+    "408":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Request Timeout
+    "409":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Conflict
+    "410":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Gone
+    "411":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Length Required
+    "412":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Precondition Failed
+    "413":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Payload Too Large
+    "414":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: URI Too Long
+    "415":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Unsupported Media Type
+    "429":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Too Many Requests
+      headers:
+        X-RateLimit-Limit:
+          description: Request limit per hour.
+          explode: false
+          schema:
+            type: integer
+          style: simple
+        X-RateLimit-Remaining:
+          description: The number of requests left for the time window.
+          explode: false
+          schema:
+            type: integer
+          style: simple
+        X-RateLimit-Reset:
+          description: The UTC date/time at which the current rate limit window resets.
+          explode: false
+          schema:
+            format: date-time
+            type: string
+          style: simple
+    "500":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Internal Server Error
+    "501":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Not Implemented
+    "503":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Service Unavailable
+    "504":
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Gateway Timeout
+    default:
+      description: Generic Error
+  schemas:
+    Client:
+      example:
+        consumer_info:
+          url_callback: http(s)://podip:port/v1/receive-notification/
+          network_instance_filters:
+          - network_instance_filters
+          - network_instance_filters
+          keepalive_timeout: 1
+          route_filters:
+          - static
+          - static
+        producer_info:
+          url_callback: http(s)://podip:port/v1/receive-notification/
+          rt_hold_time: 0
+          service_name: service_name
+          keepalive_timeout: 6
+          stale_route: "true"
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        producer_info:
+          $ref: '#/components/schemas/producer_info'
+        consumer_info:
+          $ref: '#/components/schemas/consumer_info'
+      type: object
+    producer_info:
+      example:
+        url_callback: http(s)://podip:port/v1/receive-notification/
+        rt_hold_time: 0
+        service_name: service_name
+        keepalive_timeout: 6
+        stale_route: "true"
+      properties:
+        service_name:
+          type: string
+        rt_hold_time:
+          description: "for producer client, unit is second. RIB will hold the routes\
+            \ for the specified time after the producer client get dead. If not present,\
+            \ RIB will give a default value."
+          type: integer
+        keepalive_timeout:
+          description: "Unit is second. Indicates how long RIB has not received the\
+            \ client's heartbeat before it considers the client to be dead. If not\
+            \ present, RIB will give a default value. If value = 0, indicates that\
+            \ the RIB will never delete the producer based on heartbeat(For service\
+            \ producer scenario)."
+          type: integer
+        stale_route:
+          description: "Optional field. This field is used to tell RIB when the producer\
+            \ registers whether to trigger the route stale operation for this registration.\
+            \ If value = true, it means that the route aging operation will be performed\
+            \ on the producer registered this time; if value = false, it means that\
+            \ the route aging operation will not be performed on the producer registered\
+            \ this time. Without this field, the default is stale_route = true, that\
+            \ is, the normal route aging process will be performed on the producer\
+            \ when re-registering."
+          enum:
+          - "true"
+          - "false"
+          type: string
+        url_callback:
+          description: "The location will be called to notify nexthop change to producer\
+            \ client The location will be called to notify prefix change to producer\
+            \ client. The location will be called to notify routes that need to be\
+            \ redistributed to producer client(routing protocol, for example, BGP).\
+            \ The location will be called to notify EOF information to producer client."
+          example: http(s)://podip:port/v1/receive-notification/
+          format: url
+          type: string
+      required:
+      - keepalive_timeout
+      - rt_hold_time
+      - service_name
+      type: object
+    consumer_info:
+      example:
+        url_callback: http(s)://podip:port/v1/receive-notification/
+        network_instance_filters:
+        - network_instance_filters
+        - network_instance_filters
+        keepalive_timeout: 1
+        route_filters:
+        - static
+        - static
+      properties:
+        keepalive_timeout:
+          description: "Unit is second. Indicates how long RIB has not received the\
+            \ client's heartbeat before it considers the client to be dead. If not\
+            \ present, RIB will give a default value."
+          type: integer
+        route_filters:
+          description: "for consumer client, used to filter routes as per route type\
+            \ when RIB publish routes to consumer. Only routes/nexthops that meet\
+            \ both route_filters and network_instance_filters conditions will be downloaded\
+            \ to comsumer."
+          items:
+            enum:
+            - static
+            - bgp
+            - connected
+            type: string
+          type: array
+          uniqueItems: true
+        network_instance_filters:
+          description: "for consumer client, used to filter routes as per network-instance\
+            \ when RIB publish routes to consumer. Only routes/nexthops that meet\
+            \ both route_filters and network_instance_filters conditions will be downloaded\
+            \ to comsumer."
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+        url_callback:
+          description: The location will be called to notify EOF information to consumer
+            client. The location will be called to publish routes to consumer client.
+          example: http(s)://podip:port/v1/receive-notification/
+          format: url
+          type: string
+      required:
+      - keepalive_timeout
+      - url_callback
+      type: object
+    ClientUpdate:
+      example:
+        consumer_info:
+          network_instance_filters:
+          - network_instance_filters
+          - network_instance_filters
+          route_filters:
+          - static
+          - static
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        consumer_info:
+          $ref: '#/components/schemas/ConsumerUpdateInfo'
+      type: object
+    ConsumerUpdateInfo:
+      description: used for comsumer client to update its information. route_filters
+        and network_instance_filters are used to specify routes/nexthops that they
+        need be download to comsumer. Only routes/nexthops that meet both route_filters
+        and network_instance_filters conditions will be downloaded to comsumer.
+      example:
+        network_instance_filters:
+        - network_instance_filters
+        - network_instance_filters
+        route_filters:
+        - static
+        - static
+      properties:
+        route_filters:
+          description: "for consumer client, used to filter routes as per route type\
+            \ when RIB publish routes to consumer. It shall include all route types\
+            \ that comsumer need. Only routes/nexthops that meet both route_filters\
+            \ and network_instance_filters conditions will be downloaded to comsumer."
+          items:
+            $ref: '#/components/schemas/route_type'
+          type: array
+          uniqueItems: true
+        network_instance_filters:
+          description: "for consumer client, used to filter routes as per network-instance\
+            \ when RIB publish routes to consumer. It shall include all MWs that comsumer\
+            \ need. Only routes/nexthops that meet both route_filters and network_instance_filters\
+            \ conditions will be downloaded to comsumer."
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+      type: object
+    Routes:
+      example:
+        routes:
+        - protocol:
+          - ebgp
+          - ebgp
+          argument: argument
+          afi: ipv4
+          metric: 6
+          prefix: null
+          route_type: static
+          lsp: non_lsp
+          action: add
+          dist: 0
+          nh_num: 1
+          nh:
+          - afi: ipv4
+            network_instance: network_instance
+            if_info:
+              if_type: ETHERNET
+              if_name: if_name
+            nh_addr: null
+            attr:
+            - vpn_label
+            - vpn_label
+            labels:
+              vpn_label: 5
+              label: 5
+          - afi: ipv4
+            network_instance: network_instance
+            if_info:
+              if_type: ETHERNET
+              if_name: if_name
+            nh_addr: null
+            attr:
+            - vpn_label
+            - vpn_label
+            labels:
+              vpn_label: 5
+              label: 5
+        - protocol:
+          - ebgp
+          - ebgp
+          argument: argument
+          afi: ipv4
+          metric: 6
+          prefix: null
+          route_type: static
+          lsp: non_lsp
+          action: add
+          dist: 0
+          nh_num: 1
+          nh:
+          - afi: ipv4
+            network_instance: network_instance
+            if_info:
+              if_type: ETHERNET
+              if_name: if_name
+            nh_addr: null
+            attr:
+            - vpn_label
+            - vpn_label
+            labels:
+              vpn_label: 5
+              label: 5
+          - afi: ipv4
+            network_instance: network_instance
+            if_info:
+              if_type: ETHERNET
+              if_name: if_name
+            nh_addr: null
+            attr:
+            - vpn_label
+            - vpn_label
+            labels:
+              vpn_label: 5
+              label: 5
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        routes:
+          items:
+            $ref: '#/components/schemas/RouteArrayItem'
+          type: array
+      type: object
+    RouteArrayItem:
+      oneOf:
+      - $ref: '#/components/schemas/AddRouteItem'
+      - $ref: '#/components/schemas/DeleteRouteItem'
+      type: object
+    AddRouteItem:
+      example:
+        protocol:
+        - ebgp
+        - ebgp
+        argument: argument
+        afi: ipv4
+        metric: 6
+        prefix: null
+        route_type: static
+        lsp: non_lsp
+        action: add
+        dist: 0
+        nh_num: 1
+        nh:
+        - afi: ipv4
+          network_instance: network_instance
+          if_info:
+            if_type: ETHERNET
+            if_name: if_name
+          nh_addr: null
+          attr:
+          - vpn_label
+          - vpn_label
+          labels:
+            vpn_label: 5
+            label: 5
+        - afi: ipv4
+          network_instance: network_instance
+          if_info:
+            if_type: ETHERNET
+            if_name: if_name
+          nh_addr: null
+          attr:
+          - vpn_label
+          - vpn_label
+          labels:
+            vpn_label: 5
+            label: 5
+      properties:
+        prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        afi:
+          description: Address family.
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        action:
+          description: Operation action.
+          enum:
+          - add
+          type: string
+        lsp:
+          $ref: '#/components/schemas/route_lsp_type'
+        dist:
+          description: "Distance; if not present, RIB will grant the deault distance\
+            \ of the protocol."
+          type: integer
+        metric:
+          description: "if not present, RIB will grant zero to the metric."
+          type: integer
+        route_type:
+          $ref: '#/components/schemas/route_type'
+        protocol:
+          description: sub protocol type of the route.
+          items:
+            enum:
+            - ebgp
+            - ibgp
+            type: string
+          type: array
+        argument:
+          description: "Optional private argument, used to carry additional routing\
+            \ attributes. This private argument will not be involved in route calculation."
+          type: string
+        nh_num:
+          description: Nexthop number.
+          type: integer
+        nh:
+          description: Nexthop information.
+          items:
+            $ref: '#/components/schemas/NexthopInformation'
+          type: array
+      required:
+      - action
+      - afi
+      - lsp
+      - nh
+      - nh_num
+      - prefix
+      - route_type
+      type: object
+    NexthopInformation:
+      example:
+        afi: ipv4
+        network_instance: network_instance
+        if_info:
+          if_type: ETHERNET
+          if_name: if_name
+        nh_addr: null
+        attr:
+        - vpn_label
+        - vpn_label
+        labels:
+          vpn_label: 5
+          label: 5
+      properties:
+        network_instance:
+          description: Network instance.
+          type: string
+        afi:
+          description: Address family.
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        attr:
+          description: Attributes of the nexthop of the route.
+          items:
+            enum:
+            - vpn_label
+            - label
+            - inter_network_instance
+            type: string
+          type: array
+          uniqueItems: true
+        nh_addr:
+          $ref: '#/components/schemas/IpAddress'
+        if_info:
+          $ref: '#/components/schemas/InterfaceInfo'
+        labels:
+          $ref: '#/components/schemas/NexthopLabels'
+      required:
+      - afi
+      - network_instance
+      - nh_addr
+      type: object
+    InterfaceInfo:
+      example:
+        if_type: ETHERNET
+        if_name: if_name
+      properties:
+        if_name:
+          description: "For subnet route, needs to carry interface name for display. for\
+            \ other routes, interface name is not needed."
+          type: string
+        if_type:
+          $ref: '#/components/schemas/If_type'
+      type: object
+    NexthopLabels:
+      example:
+        vpn_label: 5
+        label: 5
+      properties:
+        vpn_label:
+          description: "Nexthop vpn label, when attr = vpn_label of NexthopInformation,\
+            \ the field should be filled, indicates private network routing label;"
+          type: integer
+        label:
+          description: "Nexthop label, When attr = label of NexthopInformation, the\
+            \ field should be filled, indicates public network routing label;"
+          type: integer
+      type: object
+    DeleteRouteItem:
+      properties:
+        prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        afi:
+          description: Address family.
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        action:
+          description: Operation action.
+          enum:
+          - delete
+          type: string
+        route_type:
+          $ref: '#/components/schemas/route_type'
+        lsp:
+          $ref: '#/components/schemas/route_lsp_type'
+      required:
+      - action
+      - afi
+      - lsp
+      - prefix
+      - route_type
+      type: object
+    RoutesOperationResult:
+      example:
+        operation_result:
+        - afi: ipv4
+          prefix: null
+          network_instance: network_instance
+          lsp: non_lsp
+          action: add
+          status: 0
+        - afi: ipv4
+          prefix: null
+          network_instance: network_instance
+          lsp: non_lsp
+          action: add
+          status: 0
+      properties:
+        operation_result:
+          items:
+            $ref: '#/components/schemas/RouteOperationResultItem'
+          type: array
+      type: object
+    RouteOperationResultItem:
+      example:
+        afi: ipv4
+        prefix: null
+        network_instance: network_instance
+        lsp: non_lsp
+        action: add
+        status: 0
+      properties:
+        network_instance:
+          description: Network instance.
+          type: string
+        prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        afi:
+          description: Address family.
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        action:
+          description: Operation action.
+          enum:
+          - add
+          - delete
+          type: string
+        lsp:
+          $ref: '#/components/schemas/route_lsp_type'
+        status:
+          description: "http status code, such as 2xx/3xx/4xx/5xx etc.."
+          type: integer
+      required:
+      - action
+      - afi
+      - network_instance
+      - prefix
+      - status
+      type: object
+    BulkDeleteRoutes:
+      example:
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+      type: object
+    NexthopRegister:
+      example:
+        nexthops:
+        - address: null
+          address_family: ipv4
+        - address: null
+          address_family: ipv4
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        nexthops:
+          items:
+            $ref: '#/components/schemas/NexthopRegisterItem'
+          type: array
+          uniqueItems: true
+      type: object
+    NexthopRegisterItem:
+      example:
+        address: null
+        address_family: ipv4
+      properties:
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        address:
+          $ref: '#/components/schemas/IpAddress'
+      type: object
+    NexthopRegisterResult:
+      example:
+        register_result:
+        - address: null
+          address_family: ipv4
+          status: 0
+        - address: null
+          address_family: ipv4
+          status: 0
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        register_result:
+          items:
+            $ref: '#/components/schemas/NexthopRegisterResultItem'
+          type: array
+      type: object
+    NexthopRegisterResultItem:
+      allOf:
+      - $ref: '#/components/schemas/NexthopRegisterItem'
+      - properties:
+          status:
+            description: "http status code, such as 2xx/3xx/4xx/5xx etc.."
+            type: integer
+        type: object
+      example:
+        address: null
+        address_family: ipv4
+        status: 0
+    PrefixRegister:
+      example:
+        prefixes:
+        - address_family: ipv4
+          prefix: null
+          lookup_type: prefix_reg_lpm
+          nexthop_type: prefix_reg_nexthop_best
+        - address_family: ipv4
+          prefix: null
+          lookup_type: prefix_reg_lpm
+          nexthop_type: prefix_reg_nexthop_best
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        prefixes:
+          items:
+            $ref: '#/components/schemas/PrefixRegisterItem'
+          type: array
+          uniqueItems: true
+      type: object
+    PrefixRegisterItem:
+      example:
+        address_family: ipv4
+        prefix: null
+        lookup_type: prefix_reg_lpm
+        nexthop_type: prefix_reg_nexthop_best
+      properties:
+        prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        lookup_type:
+          enum:
+          - prefix_reg_lpm
+          - prefix_reg_exct
+          type: string
+        nexthop_type:
+          enum:
+          - prefix_reg_nexthop_best
+          - prefix_reg_nexthop_on_ip_or_adj
+          - prefix_reg_nexthop_all_lsp
+          type: string
+      type: object
+    PrefixRegisterResult:
+      example:
+        register_result:
+        - address_family: ipv4
+          prefix: null
+          network_instance: network_instance
+          status: 0
+        - address_family: ipv4
+          prefix: null
+          network_instance: network_instance
+          status: 0
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        register_result:
+          items:
+            $ref: '#/components/schemas/PrefixRegisterResultItem'
+          type: array
+          uniqueItems: true
+      type: object
+    PrefixRegisterResultItem:
+      example:
+        address_family: ipv4
+        prefix: null
+        network_instance: network_instance
+        status: 0
+      properties:
+        network_instance:
+          type: string
+        prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        status:
+          description: "http status code, such as 2xx/3xx/4xx/5xx etc.."
+          type: integer
+      type: object
+    RouteEoFFromProducer:
+      example:
+        address_family:
+        - ipv4
+        - ipv4
+      properties:
+        address_family:
+          description: "if no present, means both IPv4 and IPv6"
+          items:
+            enum:
+            - ipv4
+            - ipv6
+            type: string
+          type: array
+          uniqueItems: true
+      type: object
+    Redistribution:
+      example:
+        protocol_type: static
+        address_family: ipv4
+        srcTag: srcTag
+        dest_protocol_type: proto_bgp
+        destTag: destTag
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        protocol_type:
+          $ref: '#/components/schemas/route_type'
+        srcTag:
+          type: string
+        dest_protocol_type:
+          enum:
+          - proto_bgp
+          type: string
+        destTag:
+          type: string
+      type: object
+    Heartbeat:
+      example:
+        client_type: producer
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        client_type:
+          description: Indicates the role of client
+          enum:
+          - producer
+          - consumer
+          - producer-consumer
+          type: string
+      type: object
+    NotifyInformation:
+      discriminator:
+        propertyName: msg
+      example:
+        msg:
+          type: nexthop_change
+          items:
+          - protocol_type: static
+            nexthop_timestamp: 2000-01-23T04:56:07.000+00:00
+            address: null
+            address_family: ipv4
+            metric: 0
+            network_instance: network_instance
+            flags:
+            - nexthop_on_lsp
+            - nexthop_on_lsp
+            via_network_instance: via_network_instance
+            via_address: null
+          - protocol_type: static
+            nexthop_timestamp: 2000-01-23T04:56:07.000+00:00
+            address: null
+            address_family: ipv4
+            metric: 0
+            network_instance: network_instance
+            flags:
+            - nexthop_on_lsp
+            - nexthop_on_lsp
+            via_network_instance: via_network_instance
+            via_address: null
+        client_id:
+          name: name
+      properties:
+        client_id:
+          $ref: '#/components/schemas/ClientIdentifier'
+        msg:
+          $ref: '#/components/schemas/NotifyInformation_msg'
+      type: object
+    NexthopNotification:
+      example:
+        type: nexthop_change
+        items:
+        - protocol_type: static
+          nexthop_timestamp: 2000-01-23T04:56:07.000+00:00
+          address: null
+          address_family: ipv4
+          metric: 0
+          network_instance: network_instance
+          flags:
+          - nexthop_on_lsp
+          - nexthop_on_lsp
+          via_network_instance: via_network_instance
+          via_address: null
+        - protocol_type: static
+          nexthop_timestamp: 2000-01-23T04:56:07.000+00:00
+          address: null
+          address_family: ipv4
+          metric: 0
+          network_instance: network_instance
+          flags:
+          - nexthop_on_lsp
+          - nexthop_on_lsp
+          via_network_instance: via_network_instance
+          via_address: null
+      properties:
+        type:
+          enum:
+          - nexthop_change
+          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/NexthopNotificationItem'
+          type: array
+      type: object
+    NexthopNotificationArray:
+      items:
+        $ref: '#/components/schemas/NexthopNotificationItem'
+      type: array
+    NexthopNotificationItem:
+      example:
+        protocol_type: static
+        nexthop_timestamp: 2000-01-23T04:56:07.000+00:00
+        address: null
+        address_family: ipv4
+        metric: 0
+        network_instance: network_instance
+        flags:
+        - nexthop_on_lsp
+        - nexthop_on_lsp
+        via_network_instance: via_network_instance
+        via_address: null
+      properties:
+        network_instance:
+          type: string
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        address:
+          $ref: '#/components/schemas/IpAddress'
+        protocol_type:
+          $ref: '#/components/schemas/route_type'
+        flags:
+          items:
+            enum:
+            - nexthop_on_lsp
+            - nexthop_on_network_instance
+            - nexthop_on_default
+            type: string
+          type: array
+          uniqueItems: true
+        via_address:
+          $ref: '#/components/schemas/IpAddress'
+        metric:
+          type: integer
+        via_network_instance:
+          type: string
+        nexthop_timestamp:
+          format: date-time
+          type: string
+      type: object
+    PrefixNotification:
+      properties:
+        type:
+          enum:
+          - prefix_change
+          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/PrefixNotificationItem'
+          type: array
+      type: object
+    PrefixNotificationArray:
+      items:
+        $ref: '#/components/schemas/PrefixNotificationItem'
+      type: array
+    PrefixNotificationItem:
+      properties:
+        is_found:
+          enum:
+          - found
+          - not_found
+          type: string
+        network_instance:
+          type: string
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        ret_nexthop_type:
+          enum:
+          - prefix_reg_nexthop_best
+          - prefix_reg_nexthop_on_ip_or_adj
+          - prefix_reg_nexthop_all_lsp
+          type: string
+        num_ip_nexthop:
+          description: number of ip type's nexthop
+          type: integer
+        num_lsp_nexthop:
+          description: number of lsp type's nexthop
+          type: integer
+        inter_network_instance_flag:
+          description: if across network-instance
+          type: boolean
+        matched_prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        nexthops:
+          description: nexthops of matching prefixes found
+          items:
+            $ref: '#/components/schemas/PrefixNotificationNexthop'
+          type: array
+          uniqueItems: true
+      type: object
+    PrefixNotificationNexthop:
+      properties:
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        address:
+          $ref: '#/components/schemas/IpAddress'
+        metric:
+          type: integer
+        resolved_network_instance_name:
+          type: string
+        protocol_type:
+          $ref: '#/components/schemas/route_type'
+      type: object
+    RedistributionNotification:
+      properties:
+        type:
+          enum:
+          - redistribution
+          type: string
+        header:
+          $ref: '#/components/schemas/RedistributionNotificationHeader'
+        routes:
+          items:
+            $ref: '#/components/schemas/RedistributionNotificationRoute'
+          type: array
+          uniqueItems: true
+      type: object
+    RedistributionNotificationHeader:
+      properties:
+        network_instance:
+          type: string
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        control_command:
+          description: Indicates how BGP shall do.
+          enum:
+          - redis_mrk_del
+          - redis_del_imm
+          type: string
+        redistrition_end:
+          description: Indicates finish redistributing route in this round.
+          type: boolean
+      type: object
+    RedistributionNotificationRoutes:
+      items:
+        $ref: '#/components/schemas/RedistributionNotificationRoute'
+      type: array
+      uniqueItems: true
+    RedistributionNotificationRoute:
+      properties:
+        operation_type:
+          description: Indicates route operation type
+          enum:
+          - add
+          - delete
+          type: string
+        metric:
+          type: integer
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        nexthops_number:
+          type: integer
+        protocol_type:
+          $ref: '#/components/schemas/route_type'
+        tag:
+          type: integer
+        as_num:
+          type: integer
+        lsp_label:
+          type: integer
+        distance:
+          type: integer
+        nexthops:
+          items:
+            $ref: '#/components/schemas/RedistributionRouteNexthop'
+          type: array
+          uniqueItems: true
+      type: object
+    RedistributionRouteNexthop:
+      properties:
+        address_family:
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        address:
+          $ref: '#/components/schemas/IpAddress'
+        label:
+          type: integer
+      type: object
+    NexthopResponseEOF:
+      properties:
+        type:
+          enum:
+          - nexthop_response_eof
+          type: string
+        network_instance:
+          type: string
+      type: object
+    PerfixResponseEOF:
+      properties:
+        type:
+          enum:
+          - perfix_response_eof
+          type: string
+        network_instance:
+          type: string
+      type: object
+    RedistributionEOF:
+      properties:
+        type:
+          enum:
+          - redistribution_eof
+          type: string
+        network_instance:
+          type: string
+      type: object
+    RouteEOFToConsumer:
+      description: "After RIB publish all its existed routes/nexthops to consumer,\
+        \ RIB will send route EOF to consumer."
+      properties:
+        type:
+          enum:
+          - route_eof
+          type: string
+      type: object
+    PublishedRoutes:
+      properties:
+        type:
+          enum:
+          - routes
+          type: string
+        routes:
+          items:
+            $ref: '#/components/schemas/PublishedRoute'
+          type: array
+      type: object
+    PublishedRoute:
+      properties:
+        action:
+          description: Operation action.
+          enum:
+          - add
+          - delete
+          type: string
+        network_instance:
+          description: Network instance.
+          type: string
+        afi:
+          description: Address family.
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        prefix:
+          $ref: '#/components/schemas/IpPrefix'
+        type:
+          $ref: '#/components/schemas/route_type'
+        nh:
+          $ref: '#/components/schemas/PublishedRoute_nh'
+        timestamp:
+          format: date-time
+          type: string
+      type: object
+    PublishedNexthops:
+      properties:
+        type:
+          enum:
+          - nexthops
+          type: string
+        nexthops:
+          items:
+            $ref: '#/components/schemas/PublishedNexthop'
+          type: array
+      type: object
+    PublishedNexthop:
+      properties:
+        action:
+          description: Operation action.
+          enum:
+          - add
+          - delete
+          type: string
+        id:
+          description: "Nexthop id, identify a nexthop."
+          type: integer
+        type:
+          description: Nexthop type.
+          enum:
+          - connect
+          - non_connect
+          - l3vpn
+          - ecmp
+          - mpls
+          type: string
+        argument:
+          description: "Optional private argument, used to carry additional routing\
+            \ attributes to consumer. This private argument will not be involved in\
+            \ route calculation."
+          type: string
+        network_instance:
+          description: The network instance which nexthop belongs to.
+          type: string
+        afi:
+          description: Address family.
+          enum:
+          - ipv4
+          - ipv6
+          type: string
+        entry:
+          description: "Nexthop entry, used to indicate the address information of\
+            \ the nexthop or whether there is a via nexthop. If above 'action' is\
+            \ \"add\", the item is required."
+          items:
+            $ref: '#/components/schemas/PublishedNexthop_entry_inner'
+          type: array
+          uniqueItems: true
+        timestamp:
+          format: date-time
+          type: string
+      type: object
+    ClientIdentifier:
+      example:
+        name: name
+      properties:
+        name:
+          description: "Indicates client name. For route-engine, client name is like\
+            \ {cre-pod-name} + {static/bgp/ifm}, for data-plane, client name is like\
+            \ {dp-pod-name}, for client that is service, client name is like {service-name}."
+          type: string
+      type: object
+    route_type:
+      description: route or protocol type.
+      enum:
+      - static
+      - bgp
+      - connect
+      type: string
+    route_lsp_type:
+      description: "if the route is lsp or non-lsp. If not present, the default is\
+        \ non-lsp."
+      enum:
+      - non_lsp
+      - lsp
+      type: string
+    Timestamp:
+      format: date-time
+      type: string
+    If_type:
+      description: Interface type.
+      enum:
+      - ETHERNET
+      - VLAN
+      - GRE
+      type: string
+    Ipv4Address:
+      example: 198.51.100.1
+      nullable: true
+      type: string
+    Ipv6Address:
+      example: 2001:db8:85a3::8a2e:370:7334
+      nullable: true
+      type: string
+    IpAddress:
+      type: string
+    Ipv4Prefix:
+      example: 198.51.100.1/24
+      nullable: true
+      type: string
+    Ipv6Prefix:
+      example: 2001:db8:abcd:12::0/64
+      nullable: true
+      type: string
+    IpPrefix:
+      type: string
+    IpOrPrefix:
+      type: string
+    InvalidParam:
+      properties:
+        param:
+          type: string
+        reason:
+          type: string
+      required:
+      - param
+      type: object
+    ProblemDetails:
+      properties:
+        type:
+          format: uri
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          format: uri
+          type: string
+        cause:
+          type: string
+        invalidParams:
+          items:
+            $ref: '#/components/schemas/InvalidParam'
+          minItems: 1
+          type: array
+      type: object
+    NotifyInformation_msg:
+      description: Message content.
+      oneOf:
+      - $ref: '#/components/schemas/NexthopNotification'
+      - $ref: '#/components/schemas/PrefixNotification'
+      - $ref: '#/components/schemas/RedistributionNotification'
+      - $ref: '#/components/schemas/NexthopResponseEOF'
+      - $ref: '#/components/schemas/PerfixResponseEOF'
+      - $ref: '#/components/schemas/RedistributionEOF'
+      - $ref: '#/components/schemas/PublishedRoutes'
+      - $ref: '#/components/schemas/PublishedNexthops'
+      - $ref: '#/components/schemas/RouteEOFToConsumer'
+      type: object
+    PublishedRoute_nh:
+      description: "Nexthop; nexthop identifer which composed by nexthop network_instance\
+        \ and nexthop id. If above 'action' is \"add\", the item is required."
+      properties:
+        network_instance:
+          description: The network instance which nexthop belongs to.
+          type: string
+        id:
+          description: "Nexthop id, identify a nexthop."
+          type: integer
+      type: object
+    PublishedNexthop_entry_inner_via_nh:
+      description: "Via nexthop identifer which composed by nexthop network_instance\
+        \ and nexthop id. If \"entry\" exists, \"via_nh\" is required."
+      properties:
+        network_instance:
+          description: "If \"via_nh\" exists, \"network_instance\" is required. The\
+            \ network_instance which via nexthop belongs to."
+          type: string
+        id:
+          description: "Nexthop id, identify a nexthop. Optional, if \"id\" is empty(none),\
+            \ it means that the current nexthop is the final nexthop."
+          type: integer
+      type: object
+    PublishedNexthop_entry_inner_viaNexthopId:
+      description: "Via nexthop identifer which composed by nexthop networkInstance\
+        \ and nexthop id. If \"entry\" exists, \"viaNexthopId\" is required."
+      properties:
+        networkInstance:
+          description: "If \"viaNexthopId\" exists, \"networkInstance\" is required.\
+            \ The networkInstance which via nexthop belongs to."
+          type: string
+        id:
+          description: "Nexthop id, identify a nexthop. Optional, if \"id\" is empty(none),\
+            \ it means that the current nexthop is the final nexthop."
+          type: integer
+      type: object
+    PublishedNexthop_entry_inner:
+      description: "Specific content of nexthop, including via_nh, nh_addr, label."
+      properties:
+        via_nh:
+          $ref: '#/components/schemas/PublishedNexthop_entry_inner_via_nh'
+        viaNexthopId:
+          $ref: '#/components/schemas/PublishedNexthop_entry_inner_viaNexthopId'
+        nh_addr:
+          $ref: '#/components/schemas/IpAddress'
+        label:
+          description: For vpn and mpls label forwarding.
+          type: integer
+        networkInstance:
+          description: The networkInstance which nh_addr belongs to.
+          type: string
+        if_type:
+          $ref: '#/components/schemas/If_type'
+      type: object

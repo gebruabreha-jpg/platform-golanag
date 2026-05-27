@@ -1,0 +1,100 @@
+version: "2"
+run:
+  modules-download-mode: mod
+linters:
+  enable:
+    - asciicheck
+    - bodyclose
+    - dogsled
+    - dupl
+    - err113
+    - errorlint
+    - exhaustive
+    - funlen
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - goheader
+    - gomodguard
+    - goprintffuncname
+    - lll
+    - misspell
+    - mnd
+    - nakedret
+    - nlreturn
+    - noctx
+    - nolintlint
+    - prealloc
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - tparallel
+    - unconvert
+    - unparam
+    - whitespace
+  disable:
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - gosec
+    - testpackage
+    - wrapcheck
+    - wsl
+  settings:
+    funlen:
+      lines: 100
+      statements: 60
+    gocritic:
+      disabled-checks:
+        - commentFormatting
+        - commentedOutCode
+        - commentedOutImport
+        - paramTypeCombine
+        - ifElseChain
+        - unnamedResult
+        - exitAfterDefer
+        - appendCombine
+        - wrapperFunc
+        - typeUnparen
+        - hugeParam
+        - ptrToRefParam
+      enabled-tags:
+        - performance
+        - experimental
+        - style
+    govet:
+      enable:
+        - shadow
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - errcheck
+          - gocyclo
+          - godox
+          - gosec
+        path: _test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  new-from-rev: ""
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

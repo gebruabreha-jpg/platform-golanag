@@ -3,11 +3,11 @@ Physical Interfaces:-INTERFACE_SWITCH1 (enp59s0f0) and INTERFACE_SWITCH2 (enp59s
 
 Network Setup in configure_ip_address_on_tap.sh:-
 VLANs built on both physical NICs:
-Media: vlan<media_if1/2>
+Media:     vlan<media_if1/2>
 Signaling: vlan<signaling_if1/2>
-O&M: vlan<om_cn_if1/2>
-RAN: vlan<ran_if1/2>
-SGi: vlan<sgi1_if1> through vlan<sgi5_if2>
+O&M:       vlan<om_cn_if1/2>
+RAN:       vlan<ran_if1/2>
+SGi:       vlan<sgi1_if1> through vlan<sgi5_if2>
 
 Routes on those VLANs:-
 AMF/UDM/NRF/SMF/PCF → signaling VLANs

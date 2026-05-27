@@ -30,6 +30,7 @@ PM/Prometheus (kubectl port-forward) -kubectl port-forward goes through Kubernet
 
 
 Java File Paths where they are implemeted when we use dallas:-
+
 Yang Provider (AdpCm/Netconf)
 File: src/main/java/com/ericsson/pc/beets/testcases/steps/DeploymentSteps.java
 Method: SSH tunnel via DallasPortForwarder to yang-provider external service IP
@@ -38,10 +39,6 @@ Method: SSH tunnel via DallasPortForwarder to yang-provider external service IP
 Yang Provider (AdpOam)
 File: src/main/java/com/ericsson/pc/beets/testcases/steps/AdpOamStepDefinition.java
 Method: SSH tunnel via DallasPortForwarder using adpCmProperties.getHost() and port
-
-DallasPortForwarder Injection
-File: src/main/java/com/ericsson/pc/beets/fw/BeetsGuiceModule.java
-Method: @Named("DallasPortForwarder") final Provider<PortForwarder> portForwarderProvider - provides the SSH tunnel capability
 
 
 PM/Prometheus
@@ -62,4 +59,8 @@ Method: Ingress with loadBalancerIP via kubectlApi.createHttpIngress() accessed 
 Object Storage (SFTP)
 File: src/main/java/com/ericsson/pc/beets/testcases/steps/DeploymentSteps.java
 Method: SSH tunnel via DallasPortForwarder to adpObjectStorageProperties.getHost()
+
+DallasPortForwarder Injection
+File: src/main/java/com/ericsson/pc/beets/fw/BeetsGuiceModule.java
+Method: @Named("DallasPortForwarder") final Provider<PortForwarder> portForwarderProvider - provides the SSH tunnel capability
 

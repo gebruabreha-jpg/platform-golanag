@@ -26,18 +26,15 @@ iptables NAT for Prometheus/Search Engine/CNOM access via signaling VLAN IPs
 
 
 Services Requiring Dallas Routes:-
-Needs Dallas Routes (reliant on VLANs creat on physical NICs):
-
-Yang Provider (AdpCm/Netconf) - Both DeploymentSteps.java:1376 and AdpOamStepDefinition.java:567-568 use SSH tunnel via DallasPortForwarder, requiring tool server to route to cluster service IPs through VLANs
-Outline (Legacy) - Runs on tool server, binds IPs (100.1.x.x, 100.2.x.x, 100.3.x.x) to VLAN interfaces on INTERFACE1/INTERFACE2
-PM/Prometheus (Ingress) - ActionsHelper.java:1020-1035 - accessed via loadBalancerIP that routes through signaling VLAN iptables NAT
-Search Engine - ActionsHelper.java:1061-1062 - accessed via loadBalancerIP that routes through signaling VLAN iptables NAT
-Object Storage (SFTP) - DeploymentSteps.java:712 - SSH tunnel via DallasPortForwarder requiring tool server to route to the IP
+Needs Dallas Routes (reliant on VLANs created on physical NICs):-
+Yang Provider (AdpCm/Netconf)
+Outline (Legacy) 
+PM/Prometheus (Ingress)
+Search Engine
+Object Storage (SFTP)
 
 Does NOT Need Dallas Routes (uses Kubernetes API):
-PM/Prometheus (kubectl port-forward) - AdpOamLlvStepDefinition.java:1166 - kubectl port-forward goes through Kubernetes API server, not dallas VLAN routes
-
-As an alternative access method specifically for LLV test steps that need direct pod access. However, this is NOT the primary communication method - it's only used for specific test scenarios. The standard/primary access for PM/Prometheus uses ingress with loadBalancerIP, which DOES require Dallas routes and becomes unreachable when TRex is running.
+PM/Prometheus (kubectl port-forward) -kubectl port-forward goes through Kubernetes API server, not dallas VLAN routes as an alternative access method specifically for LLV test steps that need direct pod access. However, this is NOT the primary communication method - it's only used for specific test scenarios. The standard/primary access for PM/Prometheus uses ingress with loadBalancerIP, which DOES require Dallas routes and becomes unreachable when TRex is running.
 
 
 
@@ -77,4 +74,4 @@ Method: SSH tunnel via DallasPortForwarder to adpObjectStorageProperties.getHost
 
 
 Solution Proposal
-Use a management interface that TRex doesn't touch — configure routes to kubernetes service IPs through the management NIC instead of VLANs on TRex-bound NICs and For Yang/Netconf — add routes via management interface to reach yang-provider external service IP and tm_ingress_controller_cr_ecfe IP
+Use a management interface that TRex doesn't touch — configure routes to kubernetes service IPs through the management NIC instead of VLANs on TRex-bound NICs and For Yang/Netconf — add routes via management interface to reach yang-provider external service IP and tm_ingress_controller_cr_ecfe IP.

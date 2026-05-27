@@ -6,6 +6,10 @@ import (
 	"1booking-golang/backend/internal/platform/config"
 	"1booking-golang/backend/internal/platform/database"
 
+	"1booking-golang/backend/internal/domains/ota/identity/handler"
+	"1booking-golang/backend/internal/domains/ota/identity/service"
+	"1booking-golang/backend/internal/domains/ota/identity/persistence/postgres"
+
 	"log"
 	"net/http"
 )
@@ -27,10 +31,23 @@ func main() {
 	// create handler
 	healthHandler := systemhttp.NewHealthHandler()
 
-	// register route
+	// create repositories
+	userRepo := postgres.NewUserRepository(db)
+
+	// create services
+	authService := service.NewAuthService(userRepo)
+	authHandler := handler.NewAuthHandler(authService)
+
+	// register health route
 	mux.HandleFunc(
 		"/health",
 		healthHandler.Health,
+	)
+
+	// register auth routes
+	mux.HandleFunc(
+		"/api/auth/register",
+		authHandler.Register,
 	)
 
 	// start server

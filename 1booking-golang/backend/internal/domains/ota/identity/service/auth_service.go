@@ -5,6 +5,7 @@ import (
 
 	"1booking-golang/backend/internal/domains/ota/identity/model"
 	"1booking-golang/backend/internal/domains/ota/identity/repository"
+	"1booking-golang/backend/internal/platform/utils"
 )
 
 // AuthService handles authentication business logic.
@@ -41,7 +42,13 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*model
 
 // Register creates a new user account.
 func (s *AuthService) Register(ctx context.Context, user *model.User) error {
-	// TODO: Hash password
+	// Hash password
+	hashedPassword, err := utils.HashPassword(user.PasswordHash)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = hashedPassword
+
 	// TODO: Validate email uniqueness
 	return s.userRepo.Create(ctx, user)
 }

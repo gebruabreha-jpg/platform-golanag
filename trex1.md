@@ -29,7 +29,7 @@ PM/Prometheus (kubectl port-forward) -kubectl port-forward goes through Kubernet
 
 
 
-Java File Paths where  they implemeted when we use dallas:-
+Java File Paths where they are implemeted when we use dallas:-
 Yang Provider (AdpCm/Netconf)
 File: src/main/java/com/ericsson/pc/beets/testcases/steps/DeploymentSteps.java
 Method: SSH tunnel via DallasPortForwarder to yang-provider external service IP

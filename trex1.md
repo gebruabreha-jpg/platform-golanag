@@ -29,15 +29,17 @@ PM/Prometheus (kubectl port-forward) -kubectl port-forward goes through Kubernet
 
 
 
-Java File Paths where they are implemeted when we use dallas:-
+Java File Paths where they are implemented when we use dallas:-
 
 Yang Provider (AdpCm/Netconf)
 File: src/main/java/com/ericsson/pc/beets/testcases/steps/DeploymentSteps.java
+Lines: 1343, 1376
 Method: SSH tunnel via DallasPortForwarder to yang-provider external service IP
 
 
 Yang Provider (AdpOam)
 File: src/main/java/com/ericsson/pc/beets/testcases/steps/AdpOamStepDefinition.java
+Lines: 567-568
 Method: SSH tunnel via DallasPortForwarder using adpCmProperties.getHost() and port
 
 
@@ -56,6 +58,10 @@ File: ActionsHelper.java
 Method: Ingress with loadBalancerIP via kubectlApi.createHttpIngress() accessed through searchEngineProperties.getServer()
 
 
+Outline (Legacy)
+File: Runs on dallas tool server (no specific Java file path documented)
+Method: Binds IPs (100.1.x.x, 100.2.x.x, 100.3.x.x) to VLAN interfaces. SUT sends traffic (charging records, IPFIX, syslog) to these IPs. OutlineServerNavigator SSHes to tool server to read files.
+
 Object Storage (SFTP)
 File: src/main/java/com/ericsson/pc/beets/testcases/steps/DeploymentSteps.java
 Method: SSH tunnel via DallasPortForwarder to adpObjectStorageProperties.getHost()
@@ -63,4 +69,9 @@ Method: SSH tunnel via DallasPortForwarder to adpObjectStorageProperties.getHost
 DallasPortForwarder Injection
 File: src/main/java/com/ericsson/pc/beets/fw/BeetsGuiceModule.java
 Method: @Named("DallasPortForwarder") final Provider<PortForwarder> portForwarderProvider - provides the SSH tunnel capability
+
+Solution Proposal:
+1. Use cOutline instead of legacy Outline - eliminates dependency on TRex-bound VLANs
+2. Use a management interface (third NIC) that TRex doesn't touch - configure routes to kubernetes service IPs through the management NIC instead of VLANs on TRex-bound NICs
+3. For Yang/Netconf - add routes via management interface to reach yang-provider external service IP and tm_ingress_controller_cr_ecfe IP
 

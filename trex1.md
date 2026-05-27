@@ -1,13 +1,4 @@
-Problem:-
-When TRex starts, it binds NIC1/NIC2 to DPDK, removing them from the kernel. This destroys all VLANs built on those NICs, causing:-
-
-All kernel routes (signaling, media, om_cn, ran, sgi) to disappear
-iptables NAT rules to become useless (no route to destination)
-Yang/Netconf, Outline, Prometheus, and Search Engine to become unreachable
-
-Only raw kubectl commands (via Kubernetes API) continue to work
-
-Current Dallas Implementation on Network Stack
+Current Dallas Implementation on Network Stack:-
 Physical Interfaces:-INTERFACE_SWITCH1 (enp59s0f0) and INTERFACE_SWITCH2 (enp59s0f1) — used by both kernel VLANs.
 
 Network Setup in configure_ip_address_on_tap.sh:-

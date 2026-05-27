@@ -1,5 +1,5 @@
-Problem
-When TRex starts, it binds NIC1/NIC2 to DPDK, removing them from the kernel. This destroys all VLANs built on those NICs, causing:
+Problem:-
+When TRex starts, it binds NIC1/NIC2 to DPDK, removing them from the kernel. This destroys all VLANs built on those NICs, causing:-
 
 All kernel routes (signaling, media, om_cn, ran, sgi) to disappear
 iptables NAT rules to become useless (no route to destination)
@@ -72,6 +72,3 @@ Object Storage (SFTP)
 File: src/main/java/com/ericsson/pc/beets/testcases/steps/DeploymentSteps.java
 Method: SSH tunnel via DallasPortForwarder to adpObjectStorageProperties.getHost()
 
-
-Solution Proposal
-Use a management interface that TRex doesn't touch — configure routes to kubernetes service IPs through the management NIC instead of VLANs on TRex-bound NICs and For Yang/Netconf — add routes via management interface to reach yang-provider external service IP and tm_ingress_controller_cr_ecfe IP.

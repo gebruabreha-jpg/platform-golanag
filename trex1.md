@@ -17,7 +17,8 @@ Signaling: vlan<signaling_if1/2>
 O&M: vlan<om_cn_if1/2>
 RAN: vlan<ran_if1/2>
 SGi: vlan<sgi1_if1> through vlan<sgi5_if2>
-Routes on those VLANs:
+
+Routes on those VLANs:-
 AMF/UDM/NRF/SMF/PCF → signaling VLANs
 PCG UP N4/N9/N3 → signaling/media/RAN VLANs
 ADP COMMON, ECFE → signaling/om_cn VLANs
@@ -25,13 +26,12 @@ Outline IPs (100.1.x.x, 100.2.x.x, 100.3.x.x) bound to media/signaling/om_cn VLA
 iptables NAT for Prometheus/Search Engine/CNOM access via signaling VLAN IPs
 
 
-Services Requiring Dallas Routes:-
-Needs Dallas Routes (reliant on VLANs created on physical NICs):-
-Yang Provider (AdpCm/Netconf)
-Outline (Legacy) 
-PM/Prometheus (Ingress)
-Search Engine
-Object Storage (SFTP)
+Services Requiring Dallas Routes/Needs Dallas Routes (reliant on VLANs created on physical NICs):-
+    Yang Provider (AdpCm/Netconf)
+    Outline (Legacy) 
+    PM/Prometheus (Ingress)
+    Search Engine
+    Object Storage (SFTP)
 
 Does NOT Need Dallas Routes (uses Kubernetes API):
 PM/Prometheus (kubectl port-forward) -kubectl port-forward goes through Kubernetes API server, not dallas VLAN routes as an alternative access method specifically for LLV test steps that need direct pod access. However, this is NOT the primary communication method - it's only used for specific test scenarios. The standard/primary access for PM/Prometheus uses ingress with loadBalancerIP, which DOES require Dallas routes and becomes unreachable when TRex is running.

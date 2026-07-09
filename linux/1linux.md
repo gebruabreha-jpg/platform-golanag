@@ -73,16 +73,32 @@ Hardware
 ## Commands
 
 ```bash
+Hardware/Static Information (What the system has)
 lscpu
-cat /proc/cpuinfo
-top
-vmstat 1
-sar -u
-mpstat -P ALL
-pidstat -u
-```
+cat /proc/cpuinfo or /proc/meminfo 
 
+Performance/Runtime/Monitoring(What the system is doing now):-
+top....................... CPU ✓, Memory ✓, PID ✓, RES ✓
+iostat.................... iostat = system-wide I/O (disk/device throughput, await). 
+vmstat 1..................how bad is it (run queue 93, 62% system time)
+mpstat -P ALL.............which cores are saturated
+pidstat -u................which specific processes (not just top 30)
+sar -u ....................when did it start (spike)
+
+who/last ..........
+
+
+kernal expose  all ifno through /proc
+
+/proc is a virtual filesystem created by the Linux kernel. It contains both static information (such as CPU model and kernel version) and dynamic runtime information (such as memory usage, CPU statistics, uptime, and process information).
+
+What's the difference between /proc and /sys?
+
+/proc mainly exposes kernel state, process information, and runtime statistics.
+/sys exposes the kernel's view of hardware devices, drivers, and configuration, and in many cases allows configuration changes through sysfs.
 ## Understand
+
+
 
 * CPU Architecture
 * Physical CPU vs Logical CPU

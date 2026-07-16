@@ -13,3 +13,7 @@ crash.*.log
 # Local secrets / env
 .env
 *.auto.tfvars
+
+# Build artifacts / binaries
+*.exe
+server.exe

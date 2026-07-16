@@ -13,8 +13,8 @@ func NewTaskManager(repo repository.TaskRepository) *TaskManager {
 	return &TaskManager{repo: repo}
 }
 
-func (tm *TaskManager) AddTask(title string) model.Task {
-	return tm.repo.Add(title)
+func (tm *TaskManager) AddTask(title, description string) model.Task {
+	return tm.repo.Add(title, description)
 }
 
 func (tm *TaskManager) GetTask(taskID int) *model.Task {

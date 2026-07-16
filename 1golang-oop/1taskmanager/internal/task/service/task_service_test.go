@@ -8,7 +8,7 @@ import (
 
 func TestTaskManager_AddTask(t *testing.T) {
 	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
-	task := tm.AddTask("Test task")
+	task := tm.AddTask("Test task", "")
 	if task.Title != "Test task" {
 		t.Errorf("expected title 'Test task', got %s", task.Title)
 	}
@@ -22,7 +22,7 @@ func TestTaskManager_AddTask(t *testing.T) {
 
 func TestTaskManager_GetTask(t *testing.T) {
 	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
-	tm.AddTask("Task 1")
+	tm.AddTask("Task 1", "")
 	task := tm.GetTask(1)
 	if task == nil {
 		t.Error("expected task, got nil")
@@ -38,7 +38,7 @@ func TestTaskManager_GetTask(t *testing.T) {
 
 func TestTaskManager_DeleteTask(t *testing.T) {
 	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
-	tm.AddTask("Task 1")
+	tm.AddTask("Task 1", "")
 	if !tm.DeleteTask(1) {
 		t.Error("expected delete to succeed")
 	}
@@ -49,7 +49,7 @@ func TestTaskManager_DeleteTask(t *testing.T) {
 
 func TestTaskManager_UpdateTask(t *testing.T) {
 	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
-	tm.AddTask("Task 1")
+	tm.AddTask("Task 1", "")
 	newTitle := "Updated"
 	newDone := true
 	task := tm.UpdateTask(1, &newTitle, &newDone)
@@ -66,8 +66,8 @@ func TestTaskManager_UpdateTask(t *testing.T) {
 
 func TestTaskManager_ListTasks(t *testing.T) {
 	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
-	tm.AddTask("Task 1")
-	tm.AddTask("Task 2")
+	tm.AddTask("Task 1", "")
+	tm.AddTask("Task 2", "")
 	tasks := tm.ListTasks()
 	if len(tasks) != 2 {
 		t.Errorf("expected 2 tasks, got %d", len(tasks))

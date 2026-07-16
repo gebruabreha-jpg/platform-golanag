@@ -9,7 +9,7 @@ import (
 // TaskRepository defines storage operations for tasks.
 // Any backend (in-memory, Postgres, etc.) can implement this.
 type TaskRepository interface {
-	Add(title string) model.Task
+	Add(title, description string) model.Task
 	Get(id int) *model.Task
 	List() []model.Task
 	Update(id int, title *string, done *bool) *model.Task
@@ -30,10 +30,10 @@ func NewInMemoryTaskRepository() *InMemoryTaskRepository {
 	}
 }
 
-func (r *InMemoryTaskRepository) Add(title string) model.Task {
+func (r *InMemoryTaskRepository) Add(title, description string) model.Task {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	task := model.Task{ID: r.counter, Title: title, Done: false}
+	task := model.Task{ID: r.counter, Title: title, Description: description, Done: false}
 	r.counter++
 	r.tasks = append(r.tasks, task)
 	return task

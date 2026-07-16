@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"task-manager-api/internal/task/service"
+	"task-manager-api/pkg/response"
 )
 
 type TaskHandler struct {
@@ -17,21 +18,22 @@ func NewTaskHandler(tm *service.TaskManager) *TaskHandler {
 }
 
 func (h *TaskHandler) GetTasks(c *gin.Context) {
-	c.JSON(http.StatusOK, h.tm.ListTasks())
+	response.OK(c, http.StatusOK, h.tm.ListTasks())
 }
 
 type TaskCreate struct {
-	Title string `json:"title" binding:"required"`
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description"`
 }
 
 func (h *TaskHandler) CreateTask(c *gin.Context) {
 	var input TaskCreate
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	task := h.tm.AddTask(input.Title)
-	c.JSON(http.StatusCreated, task)
+	task := h.tm.AddTask(input.Title, input.Description)
+	response.OK(c, http.StatusCreated, task)
 }
 
 func (h *TaskHandler) GetTask(c *gin.Context) {
@@ -43,10 +45,10 @@ func (h *TaskHandler) GetTask(c *gin.Context) {
 	}
 	task := h.tm.GetTask(taskID)
 	if task != nil {
-		c.JSON(http.StatusOK, task)
+		response.OK(c, http.StatusOK, task)
 		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+	response.Fail(c, http.StatusNotFound, "Task not found")
 }
 
 type TaskUpdate struct {
@@ -63,15 +65,15 @@ func (h *TaskHandler) UpdateTask(c *gin.Context) {
 	}
 	var input TaskUpdate
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	task := h.tm.UpdateTask(taskID, input.Title, input.Done)
 	if task != nil {
-		c.JSON(http.StatusOK, task)
+		response.OK(c, http.StatusOK, task)
 		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+	response.Fail(c, http.StatusNotFound, "Task not found")
 }
 
 func (h *TaskHandler) DeleteTask(c *gin.Context) {
@@ -85,5 +87,5 @@ func (h *TaskHandler) DeleteTask(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+	response.Fail(c, http.StatusNotFound, "Task not found")
 }

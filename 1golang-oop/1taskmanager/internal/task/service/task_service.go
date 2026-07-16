@@ -1,12 +1,13 @@
 package service
 
-import (
+
+import(
 	"sync"
 	"task-manager-api/internal/task/model"
 )
 
 type TaskManager struct {
-	mu      sync.Mutex
+	mu   sync.Mutex
 	tasks   []model.Task
 	counter int
 }
@@ -64,7 +65,7 @@ func (tm *TaskManager) UpdateTask(taskID int, title *string, done *bool) *model.
 			return &tm.tasks[i]
 		}
 	}
-	return nil
+	return nil 
 }
 
 func (tm *TaskManager) ListTasks() []model.Task {

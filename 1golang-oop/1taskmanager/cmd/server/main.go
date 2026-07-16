@@ -2,13 +2,15 @@ package main
 
 import (
 	"task-manager-api/internal/task/handler"
+	"task-manager-api/internal/task/repository"
 	"task-manager-api/internal/task/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	tm := service.NewTaskManager()
+	repo := repository.NewInMemoryTaskRepository()
+	tm := service.NewTaskManager(repo)
 	h := handler.NewTaskHandler(tm)
 
 	r := gin.Default()

@@ -1,75 +1,34 @@
 package service
 
-
-import(
-	"sync"
+import (
 	"task-manager-api/internal/task/model"
+	"task-manager-api/internal/task/repository"
 )
 
 type TaskManager struct {
-	mu   sync.Mutex
-	tasks   []model.Task
-	counter int
+	repo repository.TaskRepository
 }
 
-func NewTaskManager() *TaskManager {
-	return &TaskManager{
-		tasks:   []model.Task{},
-		counter: 1,
-	}
+func NewTaskManager(repo repository.TaskRepository) *TaskManager {
+	return &TaskManager{repo: repo}
 }
 
 func (tm *TaskManager) AddTask(title string) model.Task {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	task := model.Task{ID: tm.counter, Title: title, Done: false}
-	tm.counter++
-	tm.tasks = append(tm.tasks, task)
-	return task
+	return tm.repo.Add(title)
 }
 
 func (tm *TaskManager) GetTask(taskID int) *model.Task {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	for i := range tm.tasks {
-		if tm.tasks[i].ID == taskID {
-			return &tm.tasks[i]
-		}
-	}
-	return nil
+	return tm.repo.Get(taskID)
 }
 
 func (tm *TaskManager) DeleteTask(taskID int) bool {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	for i, task := range tm.tasks {
-		if task.ID == taskID {
-			tm.tasks = append(tm.tasks[:i], tm.tasks[i+1:]...)
-			return true
-		}
-	}
-	return false
+	return tm.repo.Delete(taskID)
 }
 
 func (tm *TaskManager) UpdateTask(taskID int, title *string, done *bool) *model.Task {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	for i := range tm.tasks {
-		if tm.tasks[i].ID == taskID {
-			if title != nil {
-				tm.tasks[i].Title = *title
-			}
-			if done != nil {
-				tm.tasks[i].Done = *done
-			}
-			return &tm.tasks[i]
-		}
-	}
-	return nil 
+	return tm.repo.Update(taskID, title, done)
 }
 
 func (tm *TaskManager) ListTasks() []model.Task {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	return tm.tasks
+	return tm.repo.List()
 }

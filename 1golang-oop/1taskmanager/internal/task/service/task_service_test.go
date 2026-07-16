@@ -2,10 +2,12 @@ package service
 
 import (
 	"testing"
+
+	"task-manager-api/internal/task/repository"
 )
 
 func TestTaskManager_AddTask(t *testing.T) {
-	tm := NewTaskManager()
+	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
 	task := tm.AddTask("Test task")
 	if task.Title != "Test task" {
 		t.Errorf("expected title 'Test task', got %s", task.Title)
@@ -19,7 +21,7 @@ func TestTaskManager_AddTask(t *testing.T) {
 }
 
 func TestTaskManager_GetTask(t *testing.T) {
-	tm := NewTaskManager()
+	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
 	tm.AddTask("Task 1")
 	task := tm.GetTask(1)
 	if task == nil {
@@ -35,7 +37,7 @@ func TestTaskManager_GetTask(t *testing.T) {
 }
 
 func TestTaskManager_DeleteTask(t *testing.T) {
-	tm := NewTaskManager()
+	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
 	tm.AddTask("Task 1")
 	if !tm.DeleteTask(1) {
 		t.Error("expected delete to succeed")
@@ -46,7 +48,7 @@ func TestTaskManager_DeleteTask(t *testing.T) {
 }
 
 func TestTaskManager_UpdateTask(t *testing.T) {
-	tm := NewTaskManager()
+	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
 	tm.AddTask("Task 1")
 	newTitle := "Updated"
 	newDone := true
@@ -63,7 +65,7 @@ func TestTaskManager_UpdateTask(t *testing.T) {
 }
 
 func TestTaskManager_ListTasks(t *testing.T) {
-	tm := NewTaskManager()
+	tm := NewTaskManager(repository.NewInMemoryTaskRepository())
 	tm.AddTask("Task 1")
 	tm.AddTask("Task 2")
 	tasks := tm.ListTasks()

@@ -1,1 +1,15 @@
 .docx
+
+# Terraform
+.terraform/
+.terraform.*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+.terraform.lock.hcl
+
+# Local secrets / env
+.env
+*.auto.tfvars

@@ -1,0 +1,28 @@
+run:
+  timeout: 120s
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - gosimple
+    - unused
+    - typecheck
+    - gofmt
+    - goimports
+    - gci
+    - nestif
+    - exhaustruct
+    - errorlint
+    - wrapcheck
+
+issues:
+  exclude-useful: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gocritic
+
+output:
+  format: colored-line-number
+  sort-results: true
